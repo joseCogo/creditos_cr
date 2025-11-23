@@ -53,7 +53,7 @@ if (mysqli_stmt_execute($stmt)) {
             title: '¡Registro exitoso!',
             text: 'Ahora puedes iniciar sesión.'
         }).then(() => {
-            window.location.href = '../index.php';
+            window.location.href = '../home/index.php';
         });
     </script>";
 } else {

@@ -20,7 +20,7 @@
         rel="stylesheet"> -->
 
     <!-- Custom styles for this template-->
-     <link href="css/login.css" rel="stylesheet">
+     <link href="../css/login.css" rel="stylesheet">
 
 </head> 
 
@@ -39,7 +39,7 @@
                     <div class="success-message" id="loginSuccess">
                         ¡Inicio de sesión exitoso!
                     </div>
-                    <form action="php/login.php" method="POST">
+                    <form action="../php/login.php" method="POST">
                         <div class="input-group">
                             <label>Correo Electrónico</label>
                             <input type="email" name="correo" required placeholder="ejemplo@correo.com">
@@ -73,7 +73,7 @@
                     <div class="success-message" id="registerSuccess">
                         ¡Registro exitoso! Ahora puedes iniciar sesión.
                     </div>
-                    <form action="php/registrar.php" method="post">
+                    <form action="../php/registrar.php" method="post">
                         <div class="input-group">
                             <label>Nombre Completo</label>
                             <input type="text" name="nombre" required placeholder="Juan Pérez">

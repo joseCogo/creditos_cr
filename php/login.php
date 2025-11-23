@@ -1,13 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <title></title>
-</head>
-<body>
-    <?php
+<?php
 session_start();
 include("conexion.php");
 
@@ -24,22 +15,25 @@ if ($fila = mysqli_fetch_assoc($resultado)) {
     if (password_verify($clave, $fila['clave'])) {
         $_SESSION['usuario'] = $fila['correo'];
         $_SESSION['rol'] = $fila['rol'];
+        $_SESSION['nombre'] = $fila['nombre'];
+        $_SESSION['usuario_id'] = $fila['id'];
 
-        // Redirigir con alerta
-        echo "<script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>";
-        echo "<script>
-            Swal.fire({
-                icon: 'success',
-                title: '¡Bienvenido!',
-                text: 'Inicio de sesión exitoso.',
-                confirmButtonText: 'Ir al panel'
-            }).then(() => {
-                window.location.href = '../admin.php';
-            });
-        </script>";
+        // Redirect based on role
+        if ($fila['rol'] === 'admin') {
+            header("Location: ../home/admin.php");
+        } else {
+            header("Location: ../home/empleado.php");
+        }
+        exit();
     } else {
-        echo "<script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>";
-        echo "<script>
+        echo "<!DOCTYPE html>
+        <html lang='es'>
+        <head>
+            <meta charset='UTF-8'>
+            <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+        </head>
+        <body>
+        <script>
             Swal.fire({
                 icon: 'error',
                 title: 'Contraseña incorrecta',
@@ -47,11 +41,19 @@ if ($fila = mysqli_fetch_assoc($resultado)) {
             }).then(() => {
                 window.history.back();
             });
-        </script>";
+        </script>
+        </body>
+        </html>";
     }
 } else {
-    echo "<script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>";
-    echo "<script>
+    echo "<!DOCTYPE html>
+    <html lang='es'>
+    <head>
+        <meta charset='UTF-8'>
+        <script src='https://cdn.jsdelivr.net/npm/sweetalert2@11'></script>
+    </head>
+    <body>
+    <script>
         Swal.fire({
             icon: 'warning',
             title: 'Usuario no encontrado',
@@ -59,8 +61,7 @@ if ($fila = mysqli_fetch_assoc($resultado)) {
         }).then(() => {
             window.history.back();
         });
-    </script>";
+    </script>
+    </body>
+    </html>";
 }
-?>
-</body>
-</html>

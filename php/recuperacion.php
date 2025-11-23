@@ -77,7 +77,7 @@ try {
             title: 'Correo enviado',
             text: 'Revisa tu bandeja de entrada para continuar.'
         }).then(() => {
-            window.location.href = '../index.php';
+            window.location.href = '../php/index.php';
         });
     </script>";
 } catch (Exception $e) {
