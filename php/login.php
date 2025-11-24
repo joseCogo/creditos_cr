@@ -19,9 +19,9 @@ if ($fila = mysqli_fetch_assoc($resultado)) {
         $_SESSION['usuario_id'] = $fila['id'];
 
         if ($fila['rol'] === 'admin') {
-            header("Location: /home/admin.php");
+            header("Location: ../home/admin.php");
         } else {
-            header("Location: /home/empleado.php");
+            header("Location: ../home/empleado.php");
         }
         exit();
     } else {
@@ -38,7 +38,7 @@ if ($fila = mysqli_fetch_assoc($resultado)) {
                 title: 'Contraseña incorrecta',
                 text: 'Verifica tus datos e intenta nuevamente.'
             }).then(() => {
-                window.location.href = '/home/';
+                window.location.href = '../home/index.php';
             });
         </script>
         </body>
@@ -58,7 +58,7 @@ if ($fila = mysqli_fetch_assoc($resultado)) {
             title: 'Usuario no encontrado',
             text: '¿Estás registrado?'
         }).then(() => {
-            window.location.href = '/home/';
+            window.location.href = '../home/index.php';
         });
     </script>
     </body>
