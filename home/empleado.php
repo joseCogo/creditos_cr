@@ -1,6 +1,5 @@
 <?php
-include("../php/verificar_sesion.php");
-
+include(__DIR__ . "/../php/verificar_sesion.php");
 // Verificar que sea empleado
 if (!esEmpleado()) {
     header("Location: admin.php");

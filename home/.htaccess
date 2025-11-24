@@ -1,9 +1,17 @@
 # Archivo: home/.htaccess
 RewriteEngine On
 
-# Si la ruta pedida no es un archivo real y no es un directorio real
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+# Permitir acceso directo a archivos PHP que existan
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^.*\.php$ - [L]
 
-# Redirige todas las peticiones a index.php para que PHP maneje el enrutamiento
+# Si el archivo existe (cualquier tipo), mostrarlo
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# Si el directorio existe, mostrarlo
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Solo si NO existe el archivo, redirigir a index.php
 RewriteRule ^(.*)$ index.php [L,QSA]
