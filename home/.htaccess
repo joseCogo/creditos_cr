@@ -1,0 +1,9 @@
+# Archivo: home/.htaccess
+RewriteEngine On
+
+# Si la ruta pedida no es un archivo real y no es un directorio real
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Redirige todas las peticiones a index.php para que PHP maneje el enrutamiento
+RewriteRule ^(.*)$ index.php [L,QSA]
