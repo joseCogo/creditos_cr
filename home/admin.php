@@ -19,7 +19,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
   <title>Créditos CR - Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <link href="../css/admin.css" rel="stylesheet">
+  <link href="/css/admin.css" rel="stylesheet">
 </head>
 
 <body>
@@ -698,7 +698,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         cancelButtonText: 'Cancelar'
       }).then((result) => {
         if (result.isConfirmed) {
-          window.location.href = '../php/logout.php';
+          window.location.href = '/php/logout.php';
         }
       });
     }
@@ -764,7 +764,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
     async function cargarEstadisticas() {
       try {
-        const response = await fetch('../php/obtener_estadisticas.php');
+        const response = await fetch('/php/obtener_estadisticas.php');
         const data = await response.json();
 
         document.getElementById('total-prestado').textContent = formatMoney(data.total_prestado);
@@ -778,7 +778,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
     async function cargarReportes() {
       try {
-        const response = await fetch('../php/obtener_reportes.php');
+        const response = await fetch('/php/obtener_reportes.php');
         const data = await response.json();
 
         // Actualizar cards de ingresos
@@ -809,7 +809,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
     async function cargarClientes() {
       try {
-        const response = await fetch('../php/obtener_cliente.php');
+        const response = await fetch('/php/obtener_cliente.php');
         const clientes = await response.json();
 
         const tbody = document.getElementById('clientesTable');
@@ -845,7 +845,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       const formData = new FormData(this);
 
       try {
-        const response = await fetch('../php/registrar_cliente.php', {
+        const response = await fetch('/php/registrar_cliente.php', {
           method: 'POST',
           body: formData
         });
@@ -865,7 +865,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
     async function abrirEditarCliente(cedula) {
       try {
-        const response = await fetch(`../php/obtener_cliente.php?cedula=${cedula}`);
+        const response = await fetch(`/php/obtener_cliente.php?cedula=${cedula}`);
         const cliente = await response.json();
 
         document.getElementById('editCedula').value = cliente.cedula;
@@ -885,7 +885,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       const formData = new FormData(this);
 
       try {
-        const response = await fetch('../php/editar_cliente.php', {
+        const response = await fetch('/php/editar_cliente.php', {
           method: 'POST',
           body: formData
         });
@@ -917,7 +917,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           formData.append('cedula', cedula);
 
           try {
-            const response = await fetch('../php/eliminar_cliente.php', {
+            const response = await fetch('/php/eliminar_cliente.php', {
               method: 'POST',
               body: formData
             });
@@ -949,7 +949,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     async function cargarPrestamos() {
       try {
         const filtro = document.getElementById('filtroPrestamos').value;
-        let url = '../php/obtener_prestamos.php';
+        let url = '/php/obtener_prestamos.php';
         if (filtro) {
           url += `?estado=${filtro}`;
         }
@@ -987,7 +987,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
     async function verDetallePrestamo(prestamoId) {
       try {
-        const response = await fetch(`../php/obtener_detalle_prestamo.php?id=${prestamoId}`);
+        const response = await fetch(`/php/obtener_detalle_prestamo.php?id=${prestamoId}`);
         const data = await response.json();
 
         if (!data.success) {
@@ -1041,7 +1041,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
     async function cargarClientesSelect() {
       try {
-        const response = await fetch('../php/obtener_cliente.php');
+        const response = await fetch('/php/obtener_cliente.php');
         const clientes = await response.json();
 
         const select = document.getElementById('cliente_id');
@@ -1079,7 +1079,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       const formData = new FormData(this);
 
       try {
-        const response = await fetch('../php/registrar_prestamo.php', {
+        const response = await fetch('/php/registrar_prestamo.php', {
           method: 'POST',
           body: formData
         });
@@ -1102,7 +1102,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     // FUNCIÓN PARA VER COMPROBANTE DE PAGO
     async function verComprobantePago(pagoId) {
       try {
-        const response = await fetch(`../php/generar_comprobante.php?id=${pagoId}`);
+        const response = await fetch(`/php/generar_comprobante.php?id=${pagoId}`);
         const data = await response.json();
 
         if (!data.success) {
@@ -1259,7 +1259,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       try {
         const fechaSeleccionada = document.getElementById('fechaPago').value;
 
-        let url = '../php/obtener_pagos.php';
+        let url = '/php/obtener_pagos.php';
         if (fechaSeleccionada) {
           url += `?fecha=${fechaSeleccionada}`;
         }
@@ -1300,7 +1300,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
     async function cargarPrestamosSelect() {
       try {
-        const response = await fetch('../php/obtener_prestamos.php');
+        const response = await fetch('/php/obtener_prestamos.php');
         const prestamos = await response.json();
 
         const select = document.getElementById('prestamo_pago');
@@ -1335,7 +1335,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       const formData = new FormData(this);
 
       try {
-        const response = await fetch('../php/registrar_pago.php', {
+        const response = await fetch('/php/registrar_pago.php', {
           method: 'POST',
           body: formData
         });
@@ -1374,7 +1374,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     // SECCIÓN USUARIOS - CRUD COMPLETO
     async function cargarUsuarios() {
       try {
-        const response = await fetch('../php/obtener_usuarios.php');
+        const response = await fetch('/php/obtener_usuarios.php');
         const text = await response.text();
 
         let usuarios;
@@ -1427,7 +1427,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       const formData = new FormData(this);
 
       try {
-        const response = await fetch('../php/registrar_usuario_admin.php', {
+        const response = await fetch('/php/registrar_usuario_admin.php', {
           method: 'POST',
           body: formData
         });
@@ -1449,7 +1449,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     // Abrir modal para editar usuario
     async function abrirEditarUsuario(usuarioId) {
       try {
-        const response = await fetch('../php/obtener_usuarios.php');
+        const response = await fetch('/php/obtener_usuarios.php');
         const usuarios = await response.json();
 
         const usuario = usuarios.find(u => u.id == usuarioId);
@@ -1478,7 +1478,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       const formData = new FormData(this);
 
       try {
-        const response = await fetch('../php/editar_usuario.php', {
+        const response = await fetch('/php/editar_usuario.php', {
           method: 'POST',
           body: formData
         });
@@ -1514,7 +1514,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           formData.append('usuario_id', usuarioId);
 
           try {
-            const response = await fetch('../php/eliminar_usuario.php', {
+            const response = await fetch('/php/eliminar_usuario.php', {
               method: 'POST',
               body: formData
             });

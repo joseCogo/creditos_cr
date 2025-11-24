@@ -16,7 +16,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Empleado - CREDITOS_CR</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/admin.css">
+    <link rel="stylesheet" href="/css/admin.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
@@ -255,7 +255,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = '../php/logout.php';
+                    window.location.href = '/php/logout.php';
                 }
             });
         }
@@ -323,7 +323,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
 
         async function cargarClientes() {
             try {
-                const response = await fetch('../php/obtener_cliente.php');
+                const response = await fetch('/php/obtener_cliente.php');
                 const clientes = await response.json();
 
                 const tbody = document.getElementById('tabla-clientes');
@@ -365,7 +365,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
 
         async function verDetalleCliente(cedula) {
             try {
-                const response = await fetch(`../php/obtener_prestamos_cliente.php?cedula=${cedula}`);
+                const response = await fetch(`/php/obtener_prestamos_cliente.php?cedula=${cedula}`);
                 const data = await response.json();
 
                 if (!data.success) {
@@ -419,7 +419,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
         // FUNCIÓN PARA VER COMPROBANTE DE PAGO
         async function verComprobantePago(pagoId) {
             try {
-                const response = await fetch(`../php/generar_comprobante.php?id=${pagoId}`);
+                const response = await fetch(`/php/generar_comprobante.php?id=${pagoId}`);
                 const data = await response.json();
 
                 if (!data.success) {
@@ -576,7 +576,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
             try {
                 const fechaSeleccionada = document.getElementById('fechaPago').value;
 
-                let url = '../php/obtener_pagos.php';
+                let url = '/php/obtener_pagos.php';
                 if (fechaSeleccionada) {
                     url += `?fecha=${fechaSeleccionada}`;
                 }
@@ -617,7 +617,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
 
         async function cargarPrestamosSelect() {
             try {
-                const response = await fetch('../php/obtener_prestamos.php');
+                const response = await fetch('/php/obtener_prestamos.php');
                 const prestamos = await response.json();
 
                 const select = document.getElementById('prestamo_pago');
@@ -652,7 +652,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
             const formData = new FormData(this);
 
             try {
-                const response = await fetch('../php/registrar_pago.php', {
+                const response = await fetch('/php/registrar_pago.php', {
                     method: 'POST',
                     body: formData
                 });
@@ -711,7 +711,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
 
         async function cargarClientesPendientes() {
             try {
-                const response = await fetch('../php/obtener_clientes_pendientes.php');
+                const response = await fetch('/php/obtener_clientes_pendientes.php');
                 const data = await response.json();
 
                 const tbody = document.getElementById('tabla-pendientes');
