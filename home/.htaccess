@@ -1,9 +1,9 @@
 # Archivo: home/.htaccess
 RewriteEngine On
 
-# Permitir acceso directo a archivos PHP que existan
 RewriteCond %{REQUEST_FILENAME} -f
-RewriteRule ^.*\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} \.php$
+RewriteRule ^ - [L]
 
 # Si el archivo existe (cualquier tipo), mostrarlo
 RewriteCond %{REQUEST_FILENAME} -f
@@ -13,5 +13,4 @@ RewriteRule ^ - [L]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-# Solo si NO existe el archivo, redirigir a index.php
 RewriteRule ^(.*)$ index.php [L,QSA]
