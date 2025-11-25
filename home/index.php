@@ -54,42 +54,9 @@
                         </div>
                         <button type="submit" class="btn">Iniciar Sesión</button>
                     </form>
-                    <div class="link-text">
-                        <a onclick="showForm('register')">¿No tienes cuenta? Regístrate</a>
-                    </div>
+
                     <div class="link-text">
                         <a onclick="showForm('forgot')">¿Olvidaste tu contraseña?</a>
-                    </div>
-                </div>
-
-                <!-- Register Form -->
-                <div id="registerForm" class="form">
-                    <div class="icon-wrapper">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                        </svg>
-                    </div>
-                    <h2>Registro</h2>
-                    <div class="success-message" id="registerSuccess">
-                        ¡Registro exitoso! Ahora puedes iniciar sesión.
-                    </div>
-                    <form action="/php/registrar.php" method="post">
-                        <div class="input-group">
-                            <label>Nombre Completo</label>
-                            <input type="text" name="nombre" required placeholder="Juan Pérez">
-                        </div>
-                        <div class="input-group">
-                            <label>Correo Electrónico</label>
-                            <input type="email" name="correo" required placeholder="ejemplo@correo.com">
-                        </div>
-                        <div class="input-group">
-                            <label>Contraseña</label>
-                            <input type="password" name="clave" required placeholder="••••••••">
-                        </div>
-                        <button type="submit" class="btn">Registrarse</button>
-                    </form>
-                    <div class="link-text">
-                        <a onclick="showForm('login')">¿Ya tienes cuenta? Inicia sesión</a>
                     </div>
                 </div>
 

@@ -840,16 +840,27 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       }
     }
 
+    // Función de registrar cliente
     document.getElementById('formCliente').addEventListener('submit', async function(e) {
       e.preventDefault();
       const formData = new FormData(this);
+
+      console.log('=== Datos del cliente ===');
+      for (let [key, value] of formData.entries()) {
+        console.log(key + ': ' + value);
+      }
 
       try {
         const response = await fetch('/php/registrar_cliente.php', {
           method: 'POST',
           body: formData
         });
-        const data = await response.json();
+
+        const text = await response.text();
+        console.log('Respuesta raw:', text);
+
+        const data = JSON.parse(text);
+        console.log('Respuesta parseada:', data);
 
         if (data.success) {
           Swal.fire('Éxito', data.message, 'success');
@@ -859,7 +870,8 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           Swal.fire('Error', data.message, 'error');
         }
       } catch (error) {
-        Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
+        console.error('Error completo:', error);
+        Swal.fire('Error', 'No se pudo conectar con el servidor: ' + error.message, 'error');
       }
     });
 
@@ -1427,7 +1439,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       const formData = new FormData(this);
 
       try {
-        const response = await fetch('/php/registrar_usuario_admin.php', {
+        const response = await fetch('/php/registrar_usuario.php', {
           method: 'POST',
           body: formData
         });
