@@ -85,7 +85,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     <!-- Header -->
     <header class="header">
       <div class="header-left">
-        <button class="mobile-menu-btn" onclick="toggleMobileSidebar()">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()">
           <i class="fas fa-bars"></i>
         </button>
         <h1 id="pageTitle">Dashboard</h1>
@@ -180,22 +180,25 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
             </div>
           </div>
 
-          <table>
-            <thead>
-              <tr>
-                <th>Cédula</th>
-                <th>Nombre</th>
-                <th>Dirección</th>
-                <th>Correo</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="clientesTable">
-              <tr>
-                <td colspan="6" style="text-align: center;">Cargando clientes...</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cédula</th>
+                  <th>Nombre</th>
+                  <th>Teléfono</th>
+                  <th>Dirección</th>
+                  <th>Correo</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="clientesTable">
+                <tr>
+                  <td colspan="6" style="text-align: center;">Cargando clientes...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -215,26 +218,28 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
               </button>
             </div>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Cliente</th>
-                <th>Monto</th>
-                <th>Interés</th>
-                <th>Cuota Diaria</th>
-                <th>Fecha Inicio</th>
-                <th>Saldo Pendiente</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="prestamosTable">
-              <tr>
-                <td colspan="9" style="text-align: center;">Cargando préstamos...</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Cliente</th>
+                  <th>Monto</th>
+                  <th>Interés</th>
+                  <th>Cuota Diaria</th>
+                  <th>Fecha Inicio</th>
+                  <th>Saldo Pendiente</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="prestamosTable">
+                <tr>
+                  <td colspan="9" style="text-align: center;">Cargando préstamos...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -250,25 +255,27 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
               </button>
             </div>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Cliente</th>
-                <th>Préstamo ID</th>
-                <th>Cuota Esperada</th>
-                <th>Monto Pagado</th>
-                <th>Método</th>
-                <th>Fecha Pago</th>
-                <th>Cobrador</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="pagosTable">
-              <tr>
-                <td colspan="8" style="text-align: center;">Cargando pagos...</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Préstamo ID</th>
+                  <th>Cuota Esperada</th>
+                  <th>Monto Pagado</th>
+                  <th>Método</th>
+                  <th>Fecha Pago</th>
+                  <th>Cobrador</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="pagosTable">
+                <tr>
+                  <td colspan="8" style="text-align: center;">Cargando pagos...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -296,20 +303,22 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
               <i class="fas fa-sync"></i> Actualizar
             </button>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Total Recaudado</th>
-                <th>Número de Pagos</th>
-              </tr>
-            </thead>
-            <tbody id="reportesTable">
-              <tr>
-                <td colspan="3" style="text-align: center;">Cargando reportes...</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Total Recaudado</th>
+                  <th>Número de Pagos</th>
+                </tr>
+              </thead>
+              <tbody id="reportesTable">
+                <tr>
+                  <td colspan="3" style="text-align: center;">Cargando reportes...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -322,21 +331,23 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
               <i class="fas fa-plus"></i> Nuevo Usuario
             </button>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Rol</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="usuariosTable">
-              <tr>
-                <td colspan="6" style="text-align: center;">Cargando usuarios...</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th>Rol</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="usuariosTable">
+                <tr>
+                  <td colspan="6" style="text-align: center;">Cargando usuarios...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -703,14 +714,36 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       });
     }
 
+    function openMobileMenu() {
+      document.getElementById('sidebar').classList.add('active');
+    }
+
+    function closeMobileMenu() {
+      document.getElementById('sidebar').classList.remove('active');
+    }
+
     function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('collapsed');
+      const sidebar = document.getElementById('sidebar');
+
+      // Si estamos en móvil → abrir/cerrar menú móvil
+      if (window.innerWidth <= 850) {
+        sidebar.classList.toggle('active');
+        return;
+      }
+
+      // Si es escritorio → colapsar/expandir
+      sidebar.classList.toggle('collapsed');
       document.getElementById('mainContent').classList.toggle('expanded');
     }
 
-    function toggleMobileSidebar() {
-      document.getElementById('sidebar').classList.toggle('mobile-open');
-    }
+    // Cerrar sidebar móvil al elegir una sección
+    document.querySelectorAll('.menu-link').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 850) {
+          closeMobileMenu();
+        }
+      });
+    });
 
     function showSection(id) {
       document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
@@ -1598,6 +1631,92 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       cargarEstadisticas();
       cargarClientes();
     });
+
+    // Configuración de columnas para cada tabla
+    const tableRules = {
+      clientes: {
+        table: "#tabla-clientes",
+        hideOrder: [1, 2, 3], // columnas que se ocultan progresivamente
+        keepVisible: [4] // columna Acciones
+      },
+      pagos: {
+        table: "#pagosTable",
+        hideOrder: [1, 2, 4, 5, 6],
+        keepVisible: [7]
+      },
+      pendientes: {
+        table: "#tabla-pendientes",
+        hideOrder: [2, 5, 6, 7],
+        keepVisible: [8]
+      }
+    };
+
+    // Función general para ocultar columnas
+    function applyResponsiveTables() {
+      const width = window.innerWidth;
+
+      Object.keys(tableRules).forEach(key => {
+        const config = tableRules[key];
+        const table = document.querySelector(config.table);
+
+        if (!table) return;
+
+        const rows = table.querySelectorAll("tr");
+
+        // Mostrar todas primero
+        rows.forEach(row => {
+          [...row.children].forEach(cell => (cell.style.display = ""));
+        });
+
+        // Aplicar reglas según ancho
+        if (width < 850) hideColumn(config, rows, 0);
+        if (width < 700) hideColumn(config, rows, 1);
+        if (width < 550) hideColumn(config, rows, 2);
+        if (width < 450) hideColumn(config, rows, 3);
+      });
+    }
+
+    function hideColumn(config, rows, index) {
+      const col = config.hideOrder[index];
+      if (col === undefined) return;
+
+      rows.forEach(row => {
+        const cell = row.children[col];
+        if (cell && !config.keepVisible.includes(col)) {
+          cell.style.display = "none";
+        }
+      });
+    }
+
+    window.addEventListener("resize", applyResponsiveTables);
+    window.addEventListener("DOMContentLoaded", applyResponsiveTables);
+
+    // Convertir "Carlos Ricardo Sánchez Jiménez" → "Carlos Sánchez"
+    function abreviarNombre(nombre) {
+      let partes = nombre.trim().split(" ");
+      if (partes.length >= 2) {
+        return partes[0] + " " + partes[partes.length - 1];
+      }
+      return nombre;
+    }
+
+    // Aplicar abreviación en las tablas
+    function abreviarNombresEnTabla(selector, colIndex) {
+      document.querySelectorAll(selector).forEach(row => {
+        let cell = row.children[colIndex];
+        if (cell) {
+          cell.setAttribute("data-abbr", "1");
+          cell.textContent = abreviarNombre(cell.textContent);
+        }
+      });
+    }
+
+    // Llamar después de cargar datos
+    setTimeout(() => {
+      abreviarNombresEnTabla("#tabla-clientes tr", 1);
+      abreviarNombresEnTabla("#pagosTable tr", 0);
+      abreviarNombresEnTabla("#tabla-pendientes tr", 1);
+    }, 1000);
   </script>
 </body>
 
