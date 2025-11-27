@@ -2171,19 +2171,34 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     // Configuración de columnas para cada tabla
     const tableRules = {
       clientes: {
-        table: "#tabla-clientes",
-        hideOrder: [1, 2, 3], // columnas que se ocultan progresivamente
-        keepVisible: [4] // columna Acciones
+        table: "#clientesTable", // Corregido: coincide con <tbody id="clientesTable">
+        hideOrder: [1, 2, 3], // Ocultar: Nombre, Teléfono, Dirección (mantener Cédula y Acciones)
+        keepVisible: [0, 5] // Mantener: Cédula (0) y Acciones (5)
+      },
+      prestamos: {
+        table: "#prestamosTable", // Agregado: coincide con <tbody id="prestamosTable">
+        hideOrder: [1, 2, 3, 4, 5, 6], // Ocultar progresivamente: Cliente, Monto, Interés, Cuota Diaria, Fecha Inicio, Saldo Pendiente
+        keepVisible: [0, 7, 8] // Mantener: ID (0), Estado (7), Acciones (8)
       },
       pagos: {
-        table: "#pagosTable",
-        hideOrder: [1, 2, 4, 5, 6],
-        keepVisible: [7]
+        table: "#pagosTable", // Ya correcto
+        hideOrder: [1, 2, 4, 5, 6], // Ocultar: Préstamo ID, Cuota Esperada, Método, Fecha Pago, Cobrador
+        keepVisible: [0, 7] // Mantener: Cliente (0), Acciones (7)
+      },
+      reportes: {
+        table: "#reportesTable", // Agregado: coincide con <tbody id="reportesTable">
+        hideOrder: [1], // Ocultar: Número de Pagos (si es necesario)
+        keepVisible: [0, 2] // Mantener: Fecha (0), Total Recaudado (2)
+      },
+      usuarios: {
+        table: "#usuariosTable", // Agregado: coincide con <tbody id="usuariosTable">
+        hideOrder: [1, 2], // Ocultar: Email, Rol
+        keepVisible: [0, 3] // Mantener: Nombre (0), Acciones (3)
       },
       pendientes: {
-        table: "#tabla-pendientes",
+        table: "#tabla-pendientes", // Ya correcto (solo en empleado.php, pero mantener)
         hideOrder: [2, 5, 6, 7],
-        keepVisible: [8]
+        keepVisible: [0, 1, 8]
       }
     };
 
