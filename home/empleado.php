@@ -87,9 +87,6 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                         <h3>Lista de Clientes</h3>
                         <div class="search-box">
                             <input type="text" class="search-input" id="buscarCliente" placeholder="Buscar por cédula o nombre..." onkeyup="filtrarClientes()">
-                            <button class="btn btn-primary" onclick="cargarClientes()">
-                                <i class="fas fa-sync"></i> Actualizar
-                            </button>
                         </div>
                     </div>
 
@@ -160,9 +157,6 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                                 <span style="font-weight: 600; color: #667eea;">Fecha: <span id="fecha-pendientes"></span></span>
                                 <span style="font-weight: 600; color: #ef4444;">Total Pendientes: <span id="total-pendientes">0</span></span>
                             </div>
-                            <button class="btn btn-info" onclick="cargarClientesPendientes()">
-                                <i class="fas fa-sync"></i> Actualizar
-                            </button>
                         </div>
                     </div>
                     <div class="table-scroll">
@@ -173,7 +167,6 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                                     <th>Cliente</th>
                                     <th>Teléfono</th>
                                     <th>Cuota Diaria</th>
-                                    <th>Pagado Hoy</th>
                                     <th>Falta Pagar</th>
                                     <th>Saldo Total</th>
                                     <th>Días Mora</th>
@@ -778,9 +771,6 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                             <td style="font-weight: 600;">${cliente.cliente_nombre}</td>
                             <td>${cliente.telefono || 'N/A'}</td>
                             <td>${formatMoney(parseFloat(cliente.cuota_diaria))}</td>
-                            <td style="color: ${pagadoHoy > 0 ? '#10b981' : '#6b7280'};">
-                                ${pagadoHoy > 0 ? formatMoney(pagadoHoy) : '-'}
-                            </td>
                             <td style="color: #ef4444; font-weight: 600;">
                                 ${formatMoney(faltaPagar)}
                             </td>

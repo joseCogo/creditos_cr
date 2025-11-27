@@ -299,9 +299,6 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         <div class="table-container">
           <div class="table-header">
             <h3>Resumen de Actividad - Últimos 7 Días</h3>
-            <button class="btn btn-info" onclick="cargarReportes()">
-              <i class="fas fa-sync"></i> Actualizar
-            </button>
           </div>
           <div class="table-scroll">
             <table>
@@ -1375,6 +1372,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       }
     }
 
+    //Registrar nuevo pago
     document.getElementById('formPago').addEventListener('submit', async function(e) {
       e.preventDefault();
       const formData = new FormData(this);
