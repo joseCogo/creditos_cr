@@ -597,7 +597,252 @@ tbody tr:hover {
   color: #6b7280;
 }
 
-/* Responsive */
+/* Select con altura para mostrar múltiples opciones */
+#prestamo_pago {
+  height: 150px !important;
+  overflow-y: auto;
+  font-size: 13px;
+}
+
+#prestamo_pago option {
+  padding: 8px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+#prestamo_pago option:hover {
+  background-color: #f0f9ff;
+}
+
+/* Estilo del campo de búsqueda en modal */
+#buscarPrestamoModal {
+  border: 2px solid #667eea !important;
+  transition: all 0.3s ease;
+}
+
+#buscarPrestamoModal:focus {
+  outline: none;
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Mejorar el div de información del préstamo */
+#infoPrestamo {
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive para el modal de pagos */
+@media (max-width: 768px) {
+  #prestamo_pago {
+    height: 120px !important;
+    font-size: 12px;
+  }
+
+  #infoPrestamo {
+    font-size: 12px;
+  }
+}
+
+/* Select de clientes con altura mejorada */
+#cliente_id {
+  height: 150px !important;
+  overflow-y: auto;
+  font-size: 13px;
+}
+
+#cliente_id option {
+  padding: 8px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+#cliente_id option:hover {
+  background-color: #f0f9ff;
+}
+
+/* Estilo del campo de búsqueda de clientes */
+#buscarClienteModal {
+  border: 2px solid #667eea !important;
+  transition: all 0.3s ease;
+}
+
+#buscarClienteModal:focus {
+  outline: none;
+  border-color: #4f46e5 !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Mejorar el div de información del cliente */
+#infoCliente {
+  animation: slideDown 0.3s ease;
+}
+
+/* Info boxes en modales */
+.form-grid [style*="background: #f0f9ff"] {
+  transition: all 0.3s ease;
+}
+
+.form-grid [style*="background: #f0f9ff"]:hover {
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+}
+
+/* Mejorar select en todos los modales */
+.modal select[size] {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.modal select[size] option {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.modal select[size] option:checked {
+  background-color: #667eea !important;
+  color: white !important;
+}
+
+/* Animación para info boxes */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Icono de búsqueda visual */
+.search-input[id*="buscar"]::placeholder {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* Responsive para modales de búsqueda */
+@media (max-width: 768px) {
+  #cliente_id,
+  #prestamo_pago {
+    height: 120px !important;
+    font-size: 12px;
+  }
+
+  #infoCliente,
+  #infoPrestamo {
+    font-size: 12px;
+    padding: 10px !important;
+  }
+
+  #infoCliente > div > div,
+  #infoPrestamo > div > div {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Mejora visual para opciones seleccionadas */
+.modal select:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* Badge de información */
+.modal small {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.modal small i {
+  color: #667eea;
+}
+
+/* ================================
+   HEADER RESPONSIVE OPTIMIZADO
+   ================================ */
+@media (max-width: 600px) {
+  /* Header más compacto */
+  .header {
+    padding: 10px 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* Alinear título a la izquierda sin ocupar tanto espacio */
+  .header-left h1 {
+    font-size: 18px;
+  }
+
+  /* Ajustar tamaño del avatar */
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  /* Compactar la información del usuario */
+  .user-info {
+    gap: 5px;
+  }
+
+  .user-info div {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+  }
+
+  .user-info span,
+  .user-info div div {
+    font-size: 12px;
+  }
+
+  /* Botón salir más pequeño */
+  .logout-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  /* Evitar que el usuario + botón empujen demasiado el header */
+  .header-right {
+    gap: 10px;
+  }
+
+  /* Botón del menú mejor espaciado */
+  .mobile-menu-btn {
+    padding: 8px 10px !important;
+    font-size: 16px;
+  }
+}
+
+/* ================================
+   EXTRA: Modo ultra compacto
+   Para pantallas muy pequeñas (<360px)
+   ================================ */
+@media (max-width: 360px) {
+  .header-left h1 {
+    font-size: 16px;
+  }
+
+  .logout-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .user-info span,
+  .user-info div div {
+    display: none; /* oculta el nombre y rol, deja solo el avatar */
+  }
+}
+
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);

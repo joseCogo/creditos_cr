@@ -153,6 +153,9 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                     <div class="table-header">
                         <h3>Clientes con Pagos Pendientes Hoy</h3>
                         <div class="search-box">
+                            <input type="text" class="search-input" id="buscarPendiente"
+                                placeholder="Buscar por nombre o cédula..."
+                                onkeyup="filtrarClientesPendientes()">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <span style="font-weight: 600; color: #667eea;">Fecha: <span id="fecha-pendientes"></span></span>
                                 <span style="font-weight: 600; color: #ef4444;">Total Pendientes: <span id="total-pendientes">0</span></span>
@@ -182,229 +185,365 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Modal Pago -->
-    <div class="modal" id="modalPago">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Registrar Pago</h3>
-                <button class="close-modal" onclick="closeModal('modalPago')">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <form class="form-grid" id="formPago">
-                <div class="form-group" style="grid-column: 1 / -1;">
-                    <label>Seleccionar Préstamo *</label>
-                    <select name="prestamo_id" id="prestamo_pago" required>
-                        <option value="">-- Seleccione un préstamo --</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Monto a Pagar *</label>
-                    <input type="number" name="monto_pagado" id="monto_pagado" required placeholder="20000" min="0" step="0.01">
-                </div>
-                <div class="form-group">
-                    <label>Método de Pago *</label>
-                    <select name="metodo_pago" required>
-                        <option value="efectivo">Efectivo</option>
-                        <option value="transferencia">Transferencia</option>
-                        <option value="nequi">Nequi</option>
-                        <option value="daviplata">Daviplata</option>
-                    </select>
-                </div>
-                <div class="form-group" style="grid-column: 1 / -1;">
-                    <label>Observaciones</label>
-                    <textarea name="observacion" rows="2" placeholder="Notas sobre el pago..."></textarea>
-                </div>
-                <div style="display: flex; gap: 10px; margin-top: 20px; grid-column: 1 / -1;">
-                    <button type="submit" class="btn btn-success" style="flex: 1;">
-                        <i class="fas fa-save"></i> Registrar Pago
-                    </button>
-                    <button type="button" class="btn btn-danger" onclick="closeModal('modalPago')" style="flex: 1;">
-                        <i class="fas fa-times"></i> Cancelar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
+            <!-- Modal Pago -->
+            <div class="modal" id="modalPago">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Registrar Pago</h3>
+                        <button class="close-modal" onclick="closeModal('modalPago')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form class="form-grid" id="formPago">
+                        <!-- Campo de búsqueda de préstamos -->
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>
+                                <i class="fas fa-search"></i> Buscar Préstamo por Cliente
+                            </label>
+                            <input
+                                type="text"
+                                id="buscarPrestamoModal"
+                                class="search-input"
+                                placeholder="Escribe el nombre o cédula del cliente..."
+                                onkeyup="filtrarPrestamosModal()"
+                                style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 5px;">
+                        </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Establecer fecha actual
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('fechaPago').value = today;
+                        <!-- Select de préstamos (ahora filtrable) -->
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Seleccionar Préstamo *</label>
+                            <select name="prestamo_id" id="prestamo_pago" required size="5"
+                                style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 5px;">
+                                <option value="">-- Seleccione un préstamo --</option>
+                            </select>
+                            <small style="color: #6b7280; display: block; margin-top: 5px;">
+                                <i class="fas fa-info-circle"></i> Mostrando solo préstamos activos
+                            </small>
+                        </div>
 
-            // Cargar datos iniciales
-            cargarClientes();
-            cargarPagos();
-            cargarClientesPendientes();
-        });
+                        <!-- Información del préstamo seleccionado -->
+                        <div id="infoPrestamo" style="grid-column: 1 / -1; display: none; background: #f0f9ff; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+                            <h4 style="margin: 0 0 10px 0; color: #667eea; font-size: 14px;">
+                                <i class="fas fa-info-circle"></i> Información del Préstamo
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; font-size: 13px;">
+                                <div>
+                                    <strong>Cliente:</strong>
+                                    <div id="infoCliente" style="color: #374151;">-</div>
+                                </div>
+                                <div>
+                                    <strong>Cuota Diaria:</strong>
+                                    <div id="infoCuota" style="color: #10b981; font-weight: 600;">-</div>
+                                </div>
+                                <div>
+                                    <strong>Saldo Pendiente:</strong>
+                                    <div id="infoSaldo" style="color: #ef4444; font-weight: 600;">-</div>
+                                </div>
+                            </div>
+                        </div>
 
-        function cerrarSesion() {
-            Swal.fire({
-                title: '¿Cerrar sesión?',
-                text: "¿Estás seguro de que deseas salir?",
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#667eea',
-                cancelButtonColor: '#ef4444',
-                confirmButtonText: 'Sí, salir',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = '/php/logout.php';
-                }
-            });
-        }
+                        <div class="form-group">
+                            <label>Monto a Pagar *</label>
+                            <input type="number" name="monto_pagado" id="monto_pagado" required
+                                placeholder="20000" min="0" step="0.01">
+                        </div>
 
-        function openMobileMenu() {
-            document.getElementById('sidebar').classList.add('active');
-        }
+                        <div class="form-group">
+                            <label>Método de Pago *</label>
+                            <select name="metodo_pago" required>
+                                <option value="efectivo">Efectivo</option>
+                                <option value="transferencia">Transferencia</option>
+                                <option value="nequi">Nequi</option>
+                                <option value="daviplata">Daviplata</option>
+                            </select>
+                        </div>
 
-        function closeMobileMenu() {
-            document.getElementById('sidebar').classList.remove('active');
-        }
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Observaciones</label>
+                            <textarea name="observacion" rows="2" placeholder="Notas sobre el pago..."></textarea>
+                        </div>
 
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-
-            // Si estamos en móvil → abrir/cerrar menú móvil
-            if (window.innerWidth <= 850) {
-                sidebar.classList.toggle('active');
-                return;
-            }
-
-            // Si es escritorio → colapsar/expandir
-            sidebar.classList.toggle('collapsed');
-            document.getElementById('mainContent').classList.toggle('expanded');
-        }
-
-        // Cerrar sidebar móvil al elegir una sección
-        document.querySelectorAll('.menu-link').forEach(link => {
-            link.addEventListener('click', () => {
-                if (window.innerWidth <= 850) {
-                    closeMobileMenu();
-                }
-            });
-        });
-
-        function showSection(sectionId) {
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.remove('active');
-            });
-
-            document.querySelectorAll('.menu-link').forEach(link => {
-                link.classList.remove('active');
-            });
-
-            const section = document.getElementById(sectionId);
-            if (section) {
-                section.classList.add('active');
-            }
-
-            // Buscar y activar el enlace correspondiente en el menú
-            const menuLinks = document.querySelectorAll('.menu-link');
-            menuLinks.forEach(link => {
-                if (link.getAttribute('onclick') && link.getAttribute('onclick').includes(sectionId)) {
-                    link.classList.add('active');
-                }
-            });
-
-            // Cargar datos según la sección
-            if (sectionId === 'clientes') {
-                cargarClientes();
-            } else if (sectionId === 'pagos') {
-                cargarPagos();
-            } else if (sectionId === 'clientes-pendientes') {
-                cargarClientesPendientes();
-            }
-        }
-
-        function openModal(modalId) {
-            document.getElementById(modalId).classList.add('active');
-            if (modalId === 'modalPago') cargarPrestamosSelect();
-        }
-
-        function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            modal.classList.remove('active');
-
-            // Limpiar formulario
-            if (modalId === 'modalPago') {
-                document.getElementById('formPago').reset();
-            }
-        }
-
-        // Cerrar modal al hacer clic fuera
-        window.addEventListener('click', function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.classList.remove('active');
-            }
-        });
-
-        async function cargarClientes() {
-            try {
-                const response = await fetch('/php/obtener_cliente.php');
-                const clientes = await response.json();
-
-                const tbody = document.getElementById('tabla-clientes');
-
-                if (!clientes || clientes.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No hay clientes registrados</td></tr>';
-                    return;
-                }
-
-                tbody.innerHTML = clientes.map(cliente => `
-                    <tr>
-                        <td>${cliente.cedula}</td>
-                        <td>${cliente.nombre}</td>
-                        <td>${cliente.telefono || 'N/A'}</td>
-                        <td>${cliente.direccion || 'N/A'}</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary" onclick="verDetalleCliente('${cliente.cedula}')">
-                                <i class="fas fa-eye"></i> Ver Detalle
+                        <div style="display: flex; gap: 10px; margin-top: 20px; grid-column: 1 / -1;">
+                            <button type="submit" class="btn btn-success" style="flex: 1;">
+                                <i class="fas fa-save"></i> Registrar Pago
                             </button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('tabla-clientes').innerHTML =
-                    '<tr><td colspan="5" style="text-align: center; color: red;">Error al cargar clientes</td></tr>';
-            }
-        }
+                            <button type="button" class="btn btn-danger" onclick="closeModal('modalPago')" style="flex: 1;">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
-        function filtrarClientes() {
-            const busqueda = document.getElementById('buscarCliente').value.toLowerCase();
-            const filas = document.querySelectorAll('#tabla-clientes tr');
+            <script>
+                function obtenerFechaActual() {
+                    const hoy = new Date();
+                    const year = hoy.getFullYear();
+                    const month = String(hoy.getMonth() + 1).padStart(2, '0');
+                    const day = String(hoy.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                }
+                document.addEventListener('DOMContentLoaded', function() {
+                    const today = obtenerFechaActual();
+                    document.getElementById('fechaPago').value = today;
 
-            filas.forEach(fila => {
-                const texto = fila.textContent.toLowerCase();
-                fila.style.display = texto.includes(busqueda) ? '' : 'none';
-            });
-        }
+                    // Cargar datos iniciales
+                    cargarClientes();
+                    cargarPagos();
+                    cargarClientesPendientes();
+                });
 
-        async function verDetalleCliente(cedula) {
-            try {
-                const response = await fetch(`/php/obtener_prestamos_cliente.php?cedula=${cedula}`);
-                const data = await response.json();
-
-                if (!data.success) {
-                    Swal.fire('Error', data.message, 'error');
-                    return;
+                function cerrarSesion() {
+                    Swal.fire({
+                        title: '¿Cerrar sesión?',
+                        text: "¿Estás seguro de que deseas salir?",
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#667eea',
+                        cancelButtonColor: '#ef4444',
+                        confirmButtonText: 'Sí, salir',
+                        cancelButtonText: 'Cancelar'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = '/php/logout.php';
+                        }
+                    });
                 }
 
-                const cliente = data.cliente;
-                const prestamos = data.prestamos;
+                function openMobileMenu() {
+                    document.getElementById('sidebar').classList.add('active');
+                }
 
-                let htmlPrestamos = '';
-                if (prestamos.length > 0) {
-                    htmlPrestamos = '<h4 style="margin-top: 20px;">Préstamos Activos:</h4>';
-                    prestamos.forEach(p => {
-                        const estadoBadge = p.estado === 'activo' ? 'badge-success' : 'badge-warning';
-                        htmlPrestamos += `
+                function closeMobileMenu() {
+                    document.getElementById('sidebar').classList.remove('active');
+                }
+
+                function toggleSidebar() {
+                    const sidebar = document.getElementById('sidebar');
+
+                    // Si estamos en móvil → abrir/cerrar menú móvil
+                    if (window.innerWidth <= 850) {
+                        sidebar.classList.toggle('active');
+                        return;
+                    }
+
+                    // Si es escritorio → colapsar/expandir
+                    sidebar.classList.toggle('collapsed');
+                    document.getElementById('mainContent').classList.toggle('expanded');
+                }
+
+                // Cerrar sidebar móvil al elegir una sección
+                document.querySelectorAll('.menu-link').forEach(link => {
+                    link.addEventListener('click', () => {
+                        if (window.innerWidth <= 850) {
+                            closeMobileMenu();
+                        }
+                    });
+                });
+
+                function showSection(sectionId) {
+                    document.querySelectorAll('.section').forEach(section => {
+                        section.classList.remove('active');
+                    });
+
+                    document.querySelectorAll('.menu-link').forEach(link => {
+                        link.classList.remove('active');
+                    });
+
+                    const section = document.getElementById(sectionId);
+                    if (section) {
+                        section.classList.add('active');
+                    }
+
+                    // Buscar y activar el enlace correspondiente en el menú
+                    const menuLinks = document.querySelectorAll('.menu-link');
+                    menuLinks.forEach(link => {
+                        if (link.getAttribute('onclick') && link.getAttribute('onclick').includes(sectionId)) {
+                            link.classList.add('active');
+                        }
+                    });
+
+                    // Cargar datos según la sección
+                    if (sectionId === 'clientes') {
+                        cargarClientes();
+                    } else if (sectionId === 'pagos') {
+                        cargarPagos();
+                    } else if (sectionId === 'clientes-pendientes') {
+                        cargarClientesPendientes();
+                    }
+                }
+
+                function openModal(modalId) {
+                    document.getElementById(modalId).classList.add('active');
+                    if (modalId === 'modalPago') cargarPrestamosSelect();
+                }
+
+                function closeModal(modalId) {
+                    const modal = document.getElementById(modalId);
+                    modal.classList.remove('active');
+
+                    // Limpiar formulario
+                    if (modalId === 'modalPago') {
+                        document.getElementById('formPago').reset();
+                    }
+                }
+
+                // Cerrar modal al hacer clic fuera
+                window.addEventListener('click', function(event) {
+                    if (event.target.classList.contains('modal')) {
+                        event.target.classList.remove('active');
+                    }
+                });
+
+                // Variables globales para paginación de clientes (EMPLEADO)
+                let clientesData = [];
+                let clientesPaginaActual = 1;
+                const clientesPorPagina = 10;
+
+                async function cargarClientes() {
+                    try {
+                        const response = await fetch('/php/obtener_cliente.php');
+                        clientesData = await response.json();
+
+                        renderizarClientes();
+                    } catch (error) {
+                        console.error('Error:', error);
+                        document.getElementById('tabla-clientes').innerHTML =
+                            '<tr><td colspan="5" style="text-align: center; color: red;">Error al cargar clientes</td></tr>';
+                    }
+                }
+
+                function renderizarClientes() {
+                    const tbody = document.getElementById('tabla-clientes');
+
+                    if (!clientesData || clientesData.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No hay clientes registrados</td></tr>';
+                        return;
+                    }
+
+                    // Aplicar filtro de búsqueda si existe
+                    const busqueda = document.getElementById('buscarCliente')?.value.toLowerCase() || '';
+                    const clientesFiltrados = clientesData.filter(cliente =>
+                        cliente.nombre.toLowerCase().includes(busqueda) ||
+                        cliente.cedula.toLowerCase().includes(busqueda) ||
+                        (cliente.telefono && cliente.telefono.toLowerCase().includes(busqueda))
+                    );
+
+                    // Calcular paginación
+                    const totalPaginas = Math.ceil(clientesFiltrados.length / clientesPorPagina);
+                    const inicio = (clientesPaginaActual - 1) * clientesPorPagina;
+                    const fin = inicio + clientesPorPagina;
+                    const clientesPagina = clientesFiltrados.slice(inicio, fin);
+
+                    // Renderizar tabla
+                    tbody.innerHTML = clientesPagina.map(cliente => `
+        <tr>
+            <td>${cliente.cedula}</td>
+            <td>${cliente.nombre}</td>
+            <td>${cliente.telefono || 'N/A'}</td>
+            <td>${cliente.direccion || 'N/A'}</td>
+            <td>
+                <button class="btn btn-sm btn-primary" onclick="verDetalleCliente('${cliente.cedula}')">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+
+                    // Renderizar controles de paginación
+                    renderizarPaginacionClientes(totalPaginas, clientesFiltrados.length);
+                }
+
+                function renderizarPaginacionClientes(totalPaginas, totalRegistros) {
+                    const container = document.querySelector('#clientes .table-container');
+
+                    // Buscar si ya existe el div de paginación
+                    let paginacionDiv = container.querySelector('.pagination-controls');
+
+                    if (!paginacionDiv) {
+                        paginacionDiv = document.createElement('div');
+                        paginacionDiv.className = 'pagination-controls';
+                        paginacionDiv.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background: #f9fafb; border-radius: 8px;';
+                        container.appendChild(paginacionDiv);
+                    }
+
+                    if (totalPaginas <= 1) {
+                        paginacionDiv.innerHTML = `
+            <div style="color: #6b7280; font-size: 14px;">
+                Total: ${totalRegistros} cliente${totalRegistros !== 1 ? 's' : ''}
+            </div>
+        `;
+                        return;
+                    }
+
+                    paginacionDiv.innerHTML = `
+        <div style="color: #6b7280; font-size: 14px;">
+            Mostrando ${((clientesPaginaActual - 1) * clientesPorPagina) + 1} - ${Math.min(clientesPaginaActual * clientesPorPagina, totalRegistros)} de ${totalRegistros}
+        </div>
+        <div style="display: flex; gap: 5px;">
+            <button 
+                class="btn btn-sm btn-primary" 
+                onclick="cambiarPaginaClientes(${clientesPaginaActual - 1})"
+                ${clientesPaginaActual === 1 ? 'disabled' : ''}
+                style="${clientesPaginaActual === 1 ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
+            >
+                <i class="fas fa-chevron-left"></i> Anterior
+            </button>
+            <span style="padding: 8px 15px; background: white; border-radius: 5px; font-weight: 600;">
+                ${clientesPaginaActual} / ${totalPaginas}
+            </span>
+            <button 
+                class="btn btn-sm btn-primary" 
+                onclick="cambiarPaginaClientes(${clientesPaginaActual + 1})"
+                ${clientesPaginaActual === totalPaginas ? 'disabled' : ''}
+                style="${clientesPaginaActual === totalPaginas ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
+            >
+                Siguiente <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    `;
+                }
+
+                function cambiarPaginaClientes(nuevaPagina) {
+                    const busqueda = document.getElementById('buscarCliente')?.value.toLowerCase() || '';
+                    const clientesFiltrados = clientesData.filter(cliente =>
+                        cliente.nombre.toLowerCase().includes(busqueda) ||
+                        cliente.cedula.toLowerCase().includes(busqueda) ||
+                        (cliente.telefono && cliente.telefono.toLowerCase().includes(busqueda))
+                    );
+
+                    const totalPaginas = Math.ceil(clientesFiltrados.length / clientesPorPagina);
+                    if (nuevaPagina >= 1 && nuevaPagina <= totalPaginas) {
+                        clientesPaginaActual = nuevaPagina;
+                        renderizarClientes();
+                    }
+                }
+
+                function filtrarClientes() {
+                    clientesPaginaActual = 1; // Resetear a la primera página al filtrar
+                    renderizarClientes();
+                }
+
+                async function verDetalleCliente(cedula) {
+                    try {
+                        const response = await fetch(`/php/obtener_prestamos_cliente.php?cedula=${cedula}`);
+                        const data = await response.json();
+
+                        if (!data.success) {
+                            Swal.fire('Error', data.message, 'error');
+                            return;
+                        }
+
+                        const cliente = data.cliente;
+                        const prestamos = data.prestamos;
+
+                        let htmlPrestamos = '';
+                        if (prestamos.length > 0) {
+                            htmlPrestamos = '<h4 style="margin-top: 20px;">Préstamos Activos:</h4>';
+                            prestamos.forEach(p => {
+                                const estadoBadge = p.estado === 'activo' ? 'badge-success' : 'badge-warning';
+                                htmlPrestamos += `
                             <div class="card" style="margin-top: 10px;">
                                 <p><strong>Préstamo #${p.id}</strong></p>
                                 <p><strong>Monto:</strong> ${formatMoney(parseFloat(p.monto))}</p>
@@ -413,14 +552,14 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                                 <p><strong>Estado:</strong> <span class="badge ${estadoBadge}">${p.estado.toUpperCase()}</span></p>
                             </div>
                         `;
-                    });
-                } else {
-                    htmlPrestamos = '<p style="color: #888; margin-top: 20px;">No tiene préstamos activos</p>';
-                }
+                            });
+                        } else {
+                            htmlPrestamos = '<p style="color: #888; margin-top: 20px;">No tiene préstamos activos</p>';
+                        }
 
-                Swal.fire({
-                    title: 'Detalle del Cliente',
-                    html: `
+                        Swal.fire({
+                            title: 'Detalle del Cliente',
+                            html: `
                         <div style="text-align: left;">
                             <p><strong>Nombre:</strong> ${cliente.nombre}</p>
                             <p><strong>Cédula:</strong> ${cedula}</p>
@@ -430,28 +569,28 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                             ${htmlPrestamos}
                         </div>
                     `,
-                    width: '600px',
-                    confirmButtonText: 'Cerrar'
-                });
-            } catch (error) {
-                console.error('Error:', error);
-                Swal.fire('Error', 'No se pudo cargar la información del cliente', 'error');
-            }
-        }
-
-        // FUNCIÓN PARA VER COMPROBANTE DE PAGO
-        async function verComprobantePago(pagoId) {
-            try {
-                const response = await fetch(`/php/generar_comprobante.php?id=${pagoId}`);
-                const data = await response.json();
-
-                if (!data.success) {
-                    Swal.fire('Error', data.message, 'error');
-                    return;
+                            width: '600px',
+                            confirmButtonText: 'Cerrar'
+                        });
+                    } catch (error) {
+                        console.error('Error:', error);
+                        Swal.fire('Error', 'No se pudo cargar la información del cliente', 'error');
+                    }
                 }
 
-                // Crear HTML del comprobante
-                const htmlComprobante = `
+                // FUNCIÓN PARA VER COMPROBANTE DE PAGO
+                async function verComprobantePago(pagoId) {
+                    try {
+                        const response = await fetch(`/php/generar_comprobante.php?id=${pagoId}`);
+                        const data = await response.json();
+
+                        if (!data.success) {
+                            Swal.fire('Error', data.message, 'error');
+                            return;
+                        }
+
+                        // Crear HTML del comprobante
+                        const htmlComprobante = `
       <div id="comprobante-print" style="text-align: left; padding: 20px; border: 2px solid #667eea; border-radius: 10px; background: white;">
         <!-- Encabezado -->
         <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 15px;">
@@ -530,35 +669,35 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
       </div>
     `;
 
-                // Mostrar en SweetAlert con opción de imprimir
-                Swal.fire({
-                    title: 'Comprobante de Pago',
-                    html: htmlComprobante,
-                    width: '700px',
-                    showCancelButton: true,
-                    confirmButtonText: '<i class="fas fa-print"></i> Imprimir',
-                    cancelButtonText: 'Cerrar',
-                    confirmButtonColor: '#667eea',
-                    cancelButtonColor: '#6b7280',
-                    customClass: {
-                        popup: 'comprobante-popup'
-                    }
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        imprimirComprobante(htmlComprobante);
-                    }
-                });
+                        // Mostrar en SweetAlert con opción de imprimir
+                        Swal.fire({
+                            title: 'Comprobante de Pago',
+                            html: htmlComprobante,
+                            width: '700px',
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="fas fa-print"></i> Imprimir',
+                            cancelButtonText: 'Cerrar',
+                            confirmButtonColor: '#667eea',
+                            cancelButtonColor: '#6b7280',
+                            customClass: {
+                                popup: 'comprobante-popup'
+                            }
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                imprimirComprobante(htmlComprobante);
+                            }
+                        });
 
-            } catch (error) {
-                console.error('Error:', error);
-                Swal.fire('Error', 'No se pudo cargar el comprobante', 'error');
-            }
-        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        Swal.fire('Error', 'No se pudo cargar el comprobante', 'error');
+                    }
+                }
 
-        // Función para imprimir el comprobante
-        function imprimirComprobante(htmlComprobante) {
-            const ventanaImpresion = window.open('', '', 'width=800,height=600');
-            ventanaImpresion.document.write(`
+                // Función para imprimir el comprobante
+                function imprimirComprobante(htmlComprobante) {
+                    const ventanaImpresion = window.open('', '', 'width=800,height=600');
+                    ventanaImpresion.document.write(`
     <!DOCTYPE html>
     <html>
     <head>
@@ -591,33 +730,33 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
     </body>
     </html>
   `);
-            ventanaImpresion.document.close();
-        }
-
-        // Actualizar la función cargarPagos para agregar el evento al botón
-        async function cargarPagos() {
-            try {
-                const fechaSeleccionada = document.getElementById('fechaPago').value;
-
-                let url = '/php/obtener_pagos.php';
-                if (fechaSeleccionada) {
-                    url += `?fecha=${fechaSeleccionada}`;
+                    ventanaImpresion.document.close();
                 }
 
-                const response = await fetch(url);
-                const pagos = await response.json();
+                // Actualizar la función cargarPagos para agregar el evento al botón
+                async function cargarPagos() {
+                    try {
+                        const fechaSeleccionada = document.getElementById('fechaPago').value;
 
-                const tbody = document.getElementById('pagosTable');
+                        let url = '/php/obtener_pagos.php';
+                        if (fechaSeleccionada) {
+                            url += `?fecha=${fechaSeleccionada}`;
+                        }
 
-                if (pagos.length === 0) {
-                    const mensaje = fechaSeleccionada ?
-                        `No hay pagos registrados para la fecha ${fechaSeleccionada}` :
-                        'No hay pagos registrados';
-                    tbody.innerHTML = `<tr><td colspan="8" style="text-align: center;">${mensaje}</td></tr>`;
-                    return;
-                }
+                        const response = await fetch(url);
+                        const pagos = await response.json();
 
-                tbody.innerHTML = pagos.map(p => `
+                        const tbody = document.getElementById('pagosTable');
+
+                        if (pagos.length === 0) {
+                            const mensaje = fechaSeleccionada ?
+                                `No hay pagos registrados para la fecha ${fechaSeleccionada}` :
+                                'No hay pagos registrados';
+                            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center;">${mensaje}</td></tr>`;
+                            return;
+                        }
+
+                        tbody.innerHTML = pagos.map(p => `
                 <tr>
                     <td>${p.cliente_nombre}</td>
                     <td>#${p.prestamo_id}</td>
@@ -633,70 +772,167 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                     </td>
                 </tr>
                 `).join('');
-            } catch (error) {
-                console.error('Error cargando pagos:', error);
-            }
-        }
-
-        async function cargarPrestamosSelect() {
-            try {
-                const response = await fetch('/php/obtener_prestamos.php');
-                const prestamos = await response.json();
-
-                const select = document.getElementById('prestamo_pago');
-
-                const prestamosActivos = prestamos.filter(p => p.estado === 'activo');
-
-                if (prestamosActivos.length === 0) {
-                    select.innerHTML = '<option value="">No hay préstamos activos</option>';
-                    return;
+                    } catch (error) {
+                        console.error('Error cargando pagos:', error);
+                    }
                 }
 
-                select.innerHTML = '<option value="">-- Seleccione un préstamo --</option>' +
-                    prestamosActivos.map(p =>
-                        `<option value="${p.id}" data-cuota="${p.cuota_diaria}">${p.cliente_nombre} - Préstamo #${p.id} - Cuota: ${formatMoney(p.cuota_diaria)}</option>`
-                    ).join('');
+                // Variables globales para préstamos en modal
+                let prestamosActivosData = [];
 
-                // Auto-llenar monto cuando se selecciona un préstamo
-                select.addEventListener('change', function() {
-                    const selectedOption = this.options[this.selectedIndex];
-                    const cuota = selectedOption.getAttribute('data-cuota');
-                    if (cuota) {
-                        document.getElementById('monto_pagado').value = cuota;
+                async function cargarPrestamosSelect() {
+                    try {
+                        const response = await fetch('/php/obtener_prestamos.php');
+                        const prestamos = await response.json();
+
+                        // Guardar solo préstamos activos
+                        prestamosActivosData = prestamos.filter(p => p.estado === 'activo');
+
+                        if (prestamosActivosData.length === 0) {
+                            document.getElementById('prestamo_pago').innerHTML =
+                                '<option value="">No hay préstamos activos</option>';
+                            return;
+                        }
+
+                        // Renderizar todos los préstamos inicialmente
+                        renderizarPrestamosModal(prestamosActivosData);
+
+                        // Configurar evento de cambio en el select
+                        document.getElementById('prestamo_pago').addEventListener('change', function() {
+                            mostrarInfoPrestamo(this.value);
+                        });
+
+                        // Limpiar búsqueda al abrir modal
+                        document.getElementById('buscarPrestamoModal').value = '';
+
+                    } catch (error) {
+                        console.error('Error cargando préstamos:', error);
+                        document.getElementById('prestamo_pago').innerHTML =
+                            '<option value="">Error al cargar préstamos</option>';
                     }
-                });
-            } catch (error) {
-                console.error('Error cargando préstamos:', error);
-            }
-        }
+                }
 
-        document.getElementById('formPago').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
+                function renderizarPrestamosModal(prestamos) {
+                    const select = document.getElementById('prestamo_pago');
 
-            try {
-                const response = await fetch('/php/registrar_pago.php', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
+                    if (prestamos.length === 0) {
+                        select.innerHTML = '<option value="">No se encontraron préstamos</option>';
+                        return;
+                    }
 
-                if (data.success) {
-                    const tipoPago = data.tipo_pago === 'completo' ? 'CUOTA COMPLETA' : 'PAGO PARCIAL';
-                    const montoPagado = parseFloat(formData.get('monto_pagado'));
+                    select.innerHTML = '<option value="">-- Seleccione un préstamo --</option>' +
+                        prestamos.map(p => {
+                            const cuota = parseFloat(p.cuota_diaria);
+                            const saldo = parseFloat(p.saldo_pendiente);
+                            return `<option value="${p.id}" 
+                        data-cuota="${cuota}" 
+                        data-saldo="${saldo}"
+                        data-cliente="${p.cliente_nombre}"
+                        data-cedula="${p.cliente_cedula}">
+                    ${p.cliente_nombre} (${p.cliente_cedula}) - Préstamo #${p.id} - Cuota: ${formatMoney(cuota)}
+                </option>`;
+                        }).join('');
+                }
 
-                    // Cerrar modal ANTES de mostrar el mensaje
-                    closeModal('modalPago');
+                function filtrarPrestamosModal() {
+                    const busqueda = document.getElementById('buscarPrestamoModal').value.toLowerCase();
 
-                    // Actualizar todas las listas
-                    await cargarPagos();
-                    await cargarClientesPendientes();
+                    if (!busqueda.trim()) {
+                        // Si no hay búsqueda, mostrar todos
+                        renderizarPrestamosModal(prestamosActivosData);
+                        return;
+                    }
 
-                    // Mostrar mensaje de éxito
-                    Swal.fire({
-                        icon: 'success',
-                        title: '¡Pago Registrado Exitosamente!',
-                        html: `
+                    // Filtrar préstamos
+                    const prestamosFiltrados = prestamosActivosData.filter(p =>
+                        p.cliente_nombre.toLowerCase().includes(busqueda) ||
+                        p.cliente_cedula.toLowerCase().includes(busqueda) ||
+                        p.id.toString().includes(busqueda)
+                    );
+
+                    renderizarPrestamosModal(prestamosFiltrados);
+
+                    // Si solo hay un resultado, seleccionarlo automáticamente
+                    if (prestamosFiltrados.length === 1) {
+                        const select = document.getElementById('prestamo_pago');
+                        select.selectedIndex = 1; // Seleccionar el primer préstamo (después de la opción vacía)
+                        mostrarInfoPrestamo(prestamosFiltrados[0].id);
+                    }
+                }
+
+                function mostrarInfoPrestamo(prestamoId) {
+                    const infoDiv = document.getElementById('infoPrestamo');
+                    const select = document.getElementById('prestamo_pago');
+                    const selectedOption = select.options[select.selectedIndex];
+
+                    if (!prestamoId || prestamoId === '') {
+                        infoDiv.style.display = 'none';
+                        document.getElementById('monto_pagado').value = '';
+                        return;
+                    }
+
+                    // Obtener datos del option seleccionado
+                    const cuota = selectedOption.getAttribute('data-cuota');
+                    const saldo = selectedOption.getAttribute('data-saldo');
+                    const cliente = selectedOption.getAttribute('data-cliente');
+                    const cedula = selectedOption.getAttribute('data-cedula');
+
+                    // Mostrar información
+                    document.getElementById('infoCliente').textContent = `${cliente} (${cedula})`;
+                    document.getElementById('infoCuota').textContent = formatMoney(parseFloat(cuota));
+                    document.getElementById('infoSaldo').textContent = formatMoney(parseFloat(saldo));
+
+                    // Auto-llenar monto con la cuota diaria
+                    document.getElementById('monto_pagado').value = cuota;
+
+                    // Mostrar el div de información
+                    infoDiv.style.display = 'block';
+                }
+
+                // Limpiar al cerrar modal
+                function closeModal(modalId) {
+                    const modal = document.getElementById(modalId);
+                    modal.classList.remove('active');
+
+                    if (modalId === 'modalPago') {
+                        document.getElementById('formPago').reset();
+                        document.getElementById('buscarPrestamoModal').value = '';
+                        document.getElementById('infoPrestamo').style.display = 'none';
+
+                        // Recargar todos los préstamos
+                        if (prestamosActivosData.length > 0) {
+                            renderizarPrestamosModal(prestamosActivosData);
+                        }
+                    }
+                }
+
+                document.getElementById('formPago').addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const formData = new FormData(this);
+
+                    try {
+                        const response = await fetch('/php/registrar_pago.php', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await response.json();
+
+                        if (data.success) {
+                            const tipoPago = data.tipo_pago === 'completo' ? 'CUOTA COMPLETA' : 'PAGO PARCIAL';
+                            const montoPagado = parseFloat(formData.get('monto_pagado'));
+
+                            // Cerrar modal ANTES de mostrar el mensaje
+                            closeModal('modalPago');
+
+                            // Actualizar todas las listas
+                            await cargarPagos();
+                            await cargarClientesPendientes();
+
+                            // Mostrar mensaje de éxito
+                            Swal.fire({
+                                icon: 'success',
+                                title: '¡Pago Registrado Exitosamente!',
+                                html: `
                             <div style="text-align: left; padding: 10px;">
                                 <p style="margin: 8px 0;"><strong>Tipo de Pago:</strong> 
                                     <span style="color: ${tipoPago === 'CUOTA COMPLETA' ? '#10b981' : '#f59e0b'}; font-weight: 600;">
@@ -708,216 +944,240 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                                 ${data.nuevo_saldo <= 0 ? '<p style="color: #10b981; font-weight: 600; margin-top: 15px;">🎉 ¡Préstamo cancelado completamente!</p>' : ''}
                             </div>
                         `,
-                        confirmButtonText: 'Aceptar',
-                        confirmButtonColor: '#667eea',
-                        timer: 5000
-                    });
+                                confirmButtonText: 'Aceptar',
+                                confirmButtonColor: '#667eea',
+                                timer: 5000
+                            });
 
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error al Registrar',
-                        text: data.message,
-                        confirmButtonColor: '#ef4444'
-                    });
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error de Conexión',
-                    text: 'No se pudo conectar con el servidor. Por favor, intenta nuevamente.',
-                    confirmButtonColor: '#ef4444'
-                });
-            }
-        });
-
-        async function cargarClientesPendientes() {
-            try {
-                const response = await fetch('/php/obtener_clientes_pendientes.php');
-                const data = await response.json();
-
-                const tbody = document.getElementById('tabla-pendientes');
-
-                // Actualizar información de fecha y total
-                if (data.fecha_consulta) {
-                    document.getElementById('fecha-pendientes').textContent = data.fecha_consulta;
-                }
-                if (data.total_pendientes !== undefined) {
-                    document.getElementById('total-pendientes').textContent = data.total_pendientes;
-                }
-
-                if (!data.success || !data.clientes || data.clientes.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #10b981; font-weight: 600;">✓ ¡Excelente! No hay clientes pendientes de pago hoy</td></tr>';
-                    return;
-                }
-
-                tbody.innerHTML = data.clientes.map(cliente => {
-                    const diasMora = parseInt(cliente.dias_mora);
-                    const moraBadge = diasMora > 0 ?
-                        `<span class="badge badge-danger">${diasMora} día${diasMora > 1 ? 's' : ''}</span>` :
-                        '<span class="badge badge-success">Al día</span>';
-
-                    const pagadoHoy = parseFloat(cliente.pagado_hoy);
-                    const faltaPagar = parseFloat(cliente.falta_pagar);
-
-                    // Color de la fila según el estado
-                    const rowClass = diasMora > 3 ? 'style="background-color: #fee2e2;"' :
-                        diasMora > 0 ? 'style="background-color: #fef3c7;"' : '';
-
-                    return `
-                        <tr ${rowClass}>
-                            <td>${cliente.cedula}</td>
-                            <td style="font-weight: 600;">${cliente.cliente_nombre}</td>
-                            <td>${cliente.telefono || 'N/A'}</td>
-                            <td>${formatMoney(parseFloat(cliente.cuota_diaria))}</td>
-                            <td style="color: #ef4444; font-weight: 600;">
-                                ${formatMoney(faltaPagar)}
-                            </td>
-                            <td>${formatMoney(parseFloat(cliente.saldo_pendiente))}</td>
-                            <td>${moraBadge}</td>
-                            <td>
-                                <button class="btn btn-sm btn-success" onclick="cobrarCliente(${cliente.prestamo_id}, ${cliente.cuota_diaria})" title="Registrar pago de este cliente">
-                                    <i class="fas fa-hand-holding-usd"></i> Cobrar
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('tabla-pendientes').innerHTML =
-                    '<tr><td colspan="9" style="text-align: center; color: red;">Error al cargar pendientes</td></tr>';
-            }
-        }
-
-        function cobrarCliente(prestamoId, cuotaDiaria = null) {
-            // Primero cambiar a la sección de pagos
-            showSection('pagos');
-
-            // Esperar un momento antes de abrir el modal
-            setTimeout(() => {
-                openModal('modalPago');
-
-                // Esperar a que se cargue el select
-                setTimeout(() => {
-                    const select = document.getElementById('prestamo_pago');
-                    select.value = prestamoId;
-
-                    // Si se proporciona la cuota, llenarla directamente
-                    if (cuotaDiaria) {
-                        document.getElementById('monto_pagado').value = cuotaDiaria;
-                    } else {
-                        // Disparar el evento change para auto-llenar el monto
-                        const event = new Event('change');
-                        select.dispatchEvent(event);
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error al Registrar',
+                                text: data.message,
+                                confirmButtonColor: '#ef4444'
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error de Conexión',
+                            text: 'No se pudo conectar con el servidor. Por favor, intenta nuevamente.',
+                            confirmButtonColor: '#ef4444'
+                        });
                     }
-                }, 300);
-            }, 100);
-        }
-
-        function verComprobante(pagoId) {
-            Swal.fire({
-                title: 'Comprobante',
-                text: 'Funcionalidad de comprobante en desarrollo',
-                icon: 'info'
-            });
-        }
-
-        function formatMoney(amount) {
-            return new Intl.NumberFormat('es-CO', {
-                style: 'currency',
-                currency: 'COP',
-                minimumFractionDigits: 0
-            }).format(amount);
-        }
-
-        // Configuración de columnas para cada tabla
-        const tableRules = {
-            clientes: {
-                table: "#tabla-clientes",
-                hideOrder: [1, 2, 3], // columnas que se ocultan progresivamente
-                keepVisible: [4] // columna Acciones
-            },
-            pagos: {
-                table: "#pagosTable",
-                hideOrder: [1, 2, 4, 5, 6],
-                keepVisible: [7]
-            },
-            pendientes: {
-                table: "#tabla-pendientes",
-                hideOrder: [2, 5, 6, 7],
-                keepVisible: [8]
-            }
-        };
-
-        // Función general para ocultar columnas
-        function applyResponsiveTables() {
-            const width = window.innerWidth;
-
-            Object.keys(tableRules).forEach(key => {
-                const config = tableRules[key];
-                const table = document.querySelector(config.table);
-
-                if (!table) return;
-
-                const rows = table.querySelectorAll("tr");
-
-                // Mostrar todas primero
-                rows.forEach(row => {
-                    [...row.children].forEach(cell => (cell.style.display = ""));
                 });
 
-                // Aplicar reglas según ancho
-                if (width < 850) hideColumn(config, rows, 0);
-                if (width < 700) hideColumn(config, rows, 1);
-                if (width < 550) hideColumn(config, rows, 2);
-                if (width < 450) hideColumn(config, rows, 3);
-            });
-        }
+                let clientesPendientesData = [];
 
-        function hideColumn(config, rows, index) {
-            const col = config.hideOrder[index];
-            if (col === undefined) return;
+                async function cargarClientesPendientes() {
+                    try {
+                        const response = await fetch('/php/obtener_clientes_pendientes.php');
+                        const data = await response.json();
 
-            rows.forEach(row => {
-                const cell = row.children[col];
-                if (cell && !config.keepVisible.includes(col)) {
-                    cell.style.display = "none";
+                        // Guardar datos globalmente
+                        clientesPendientesData = data.clientes || [];
+
+                        // Actualizar información de fecha y total
+                        if (data.fecha_consulta) {
+                            document.getElementById('fecha-pendientes').textContent = data.fecha_consulta;
+                        }
+
+                        // Renderizar tabla
+                        renderizarClientesPendientes();
+                    } catch (error) {
+                        console.error('Error:', error);
+                        document.getElementById('tabla-pendientes').innerHTML =
+                            '<tr><td colspan="9" style="text-align: center; color: red;">Error al cargar pendientes</td></tr>';
+                    }
                 }
-            });
-        }
 
-        window.addEventListener("resize", applyResponsiveTables);
-        window.addEventListener("DOMContentLoaded", applyResponsiveTables);
+                function renderizarClientesPendientes() {
+                    const tbody = document.getElementById('tabla-pendientes');
 
-        // Convertir "Carlos Ricardo Sánchez Jiménez" → "Carlos Sánchez"
-        function abreviarNombre(nombre) {
-            let partes = nombre.trim().split(" ");
-            if (partes.length >= 2) {
-                return partes[0] + " " + partes[partes.length - 1];
-            }
-            return nombre;
-        }
+                    // Aplicar filtro de búsqueda
+                    const busqueda = document.getElementById('buscarPendiente')?.value.toLowerCase() || '';
+                    const clientesFiltrados = clientesPendientesData.filter(cliente =>
+                        cliente.cliente_nombre.toLowerCase().includes(busqueda) ||
+                        cliente.cedula.toLowerCase().includes(busqueda)
+                    );
 
-        // Aplicar abreviación en las tablas
-        function abreviarNombresEnTabla(selector, colIndex) {
-            document.querySelectorAll(selector).forEach(row => {
-                let cell = row.children[colIndex];
-                if (cell) {
-                    cell.setAttribute("data-abbr", "1");
-                    cell.textContent = abreviarNombre(cell.textContent);
+                    // Actualizar contador de pendientes
+                    document.getElementById('total-pendientes').textContent = clientesFiltrados.length;
+
+                    if (clientesFiltrados.length === 0) {
+                        const mensaje = busqueda ?
+                            'No se encontraron clientes con ese criterio' :
+                            '✓ ¡Excelente! No hay clientes pendientes de pago hoy';
+                        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #10b981; font-weight: 600;">${mensaje}</td></tr>`;
+                        return;
+                    }
+
+                    tbody.innerHTML = clientesFiltrados.map(cliente => {
+                        const diasMora = parseInt(cliente.dias_mora);
+                        const moraBadge = diasMora > 0 ?
+                            `<span class="badge badge-danger">${diasMora} día${diasMora > 1 ? 's' : ''}</span>` :
+                            '<span class="badge badge-success">Al día</span>';
+
+                        const pagadoHoy = parseFloat(cliente.pagado_hoy);
+                        const faltaPagar = parseFloat(cliente.falta_pagar);
+
+                        // Color de la fila según el estado
+                        const rowClass = diasMora > 3 ? 'style="background-color: #fee2e2;"' :
+                            diasMora > 0 ? 'style="background-color: #fef3c7;"' : '';
+
+                        return `
+            <tr ${rowClass}>
+                <td>${cliente.cedula}</td>
+                <td style="font-weight: 600;">${cliente.cliente_nombre}</td>
+                <td>${cliente.telefono || 'N/A'}</td>
+                <td>${formatMoney(parseFloat(cliente.cuota_diaria))}</td>
+                <td style="color: #ef4444; font-weight: 600;">
+                    ${formatMoney(faltaPagar)}
+                </td>
+                <td>${formatMoney(parseFloat(cliente.saldo_pendiente))}</td>
+                <td>${moraBadge}</td>
+                <td>
+                    <button class="btn btn-sm btn-success" onclick="cobrarCliente(${cliente.prestamo_id}, ${cliente.cuota_diaria})" title="Registrar pago de este cliente">
+                        <i class="fas fa-hand-holding-usd"></i> Cobrar
+                    </button>
+                </td>
+            </tr>
+        `;
+                    }).join('');
                 }
-            });
-        }
 
-        // Llamar después de cargar datos
-        setTimeout(() => {
-            abreviarNombresEnTabla("#tabla-clientes tr", 1);
-            abreviarNombresEnTabla("#pagosTable tr", 0);
-            abreviarNombresEnTabla("#tabla-pendientes tr", 1);
-        }, 1000);
-    </script>
+                function filtrarClientesPendientes() {
+                    renderizarClientesPendientes();
+                }
+
+                function cobrarCliente(prestamoId, cuotaDiaria = null) {
+                    // Primero cambiar a la sección de pagos
+                    showSection('pagos');
+
+                    // Esperar un momento antes de abrir el modal
+                    setTimeout(() => {
+                        openModal('modalPago');
+
+                        // Esperar a que se cargue el select
+                        setTimeout(() => {
+                            const select = document.getElementById('prestamo_pago');
+                            select.value = prestamoId;
+
+                            // Si se proporciona la cuota, llenarla directamente
+                            if (cuotaDiaria) {
+                                document.getElementById('monto_pagado').value = cuotaDiaria;
+                            } else {
+                                // Disparar el evento change para auto-llenar el monto
+                                const event = new Event('change');
+                                select.dispatchEvent(event);
+                            }
+                        }, 300);
+                    }, 100);
+                }
+
+                function verComprobante(pagoId) {
+                    Swal.fire({
+                        title: 'Comprobante',
+                        text: 'Funcionalidad de comprobante en desarrollo',
+                        icon: 'info'
+                    });
+                }
+
+                function formatMoney(amount) {
+                    return new Intl.NumberFormat('es-CO', {
+                        style: 'currency',
+                        currency: 'COP',
+                        minimumFractionDigits: 0
+                    }).format(amount);
+                }
+
+                // Configuración de columnas para cada tabla
+                const tableRules = {
+                    clientes: {
+                        table: "#tabla-clientes",
+                        hideOrder: [1, 2, 3], // columnas que se ocultan progresivamente
+                        keepVisible: [4] // columna Acciones
+                    },
+                    pagos: {
+                        table: "#pagosTable",
+                        hideOrder: [1, 2, 4, 5, 6],
+                        keepVisible: [7]
+                    },
+                    pendientes: {
+                        table: "#tabla-pendientes",
+                        hideOrder: [2, 5, 6, 7],
+                        keepVisible: [8]
+                    }
+                };
+
+                // Función general para ocultar columnas
+                function applyResponsiveTables() {
+                    const width = window.innerWidth;
+
+                    Object.keys(tableRules).forEach(key => {
+                        const config = tableRules[key];
+                        const table = document.querySelector(config.table);
+
+                        if (!table) return;
+
+                        const rows = table.querySelectorAll("tr");
+
+                        // Mostrar todas primero
+                        rows.forEach(row => {
+                            [...row.children].forEach(cell => (cell.style.display = ""));
+                        });
+
+                        // Aplicar reglas según ancho
+                        if (width < 850) hideColumn(config, rows, 0);
+                        if (width < 700) hideColumn(config, rows, 1);
+                        if (width < 550) hideColumn(config, rows, 2);
+                        if (width < 450) hideColumn(config, rows, 3);
+                    });
+                }
+
+                function hideColumn(config, rows, index) {
+                    const col = config.hideOrder[index];
+                    if (col === undefined) return;
+
+                    rows.forEach(row => {
+                        const cell = row.children[col];
+                        if (cell && !config.keepVisible.includes(col)) {
+                            cell.style.display = "none";
+                        }
+                    });
+                }
+
+                window.addEventListener("resize", applyResponsiveTables);
+                window.addEventListener("DOMContentLoaded", applyResponsiveTables);
+
+                // Convertir "Carlos Ricardo Sánchez Jiménez" → "Carlos Sánchez"
+                function abreviarNombre(nombre) {
+                    let partes = nombre.trim().split(" ");
+                    if (partes.length >= 2) {
+                        return partes[0] + " " + partes[partes.length - 1];
+                    }
+                    return nombre;
+                }
+
+                // Aplicar abreviación en las tablas
+                function abreviarNombresEnTabla(selector, colIndex) {
+                    document.querySelectorAll(selector).forEach(row => {
+                        let cell = row.children[colIndex];
+                        if (cell) {
+                            cell.setAttribute("data-abbr", "1");
+                            cell.textContent = abreviarNombre(cell.textContent);
+                        }
+                    });
+                }
+
+                // Llamar después de cargar datos
+                setTimeout(() => {
+                    abreviarNombresEnTabla("#tabla-clientes tr", 1);
+                    abreviarNombresEnTabla("#pagosTable tr", 0);
+                    abreviarNombresEnTabla("#tabla-pendientes tr", 1);
+                }, 1000);
+            </script>
 </body>
 
 </html>

@@ -208,6 +208,9 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           <div class="table-header">
             <h3>Gestión de Préstamos</h3>
             <div class="search-box">
+              <input type="text" class="search-input" id="buscarPrestamo"
+                placeholder="Buscar por cliente o ID..."
+                onkeyup="filtrarPrestamos()">
               <select class="search-input" id="filtroPrestamos" onchange="cargarPrestamos()">
                 <option value="">Todos los estados</option>
                 <option value="activo">Activos</option>
@@ -484,11 +487,55 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       </div>
 
       <form class="form-grid" id="formPrestamo" oninput="calcularCuota()">
+        <!-- Campo de búsqueda de clientes -->
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label>
+            <i class="fas fa-search"></i> Buscar Cliente
+          </label>
+          <input
+            type="text"
+            id="buscarClienteModal"
+            class="search-input"
+            placeholder="Escribe el nombre o cédula del cliente..."
+            onkeyup="filtrarClientesModal()"
+            style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 5px;">
+        </div>
+
+        <!-- Select de clientes (ahora filtrable) -->
         <div class="form-group" style="grid-column: 1 / -1;">
           <label for="cliente_id">Seleccionar Cliente *</label>
-          <select name="cliente_id" id="cliente_id" required>
+          <select name="cliente_id" id="cliente_id" required size="5"
+            style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 5px;">
             <option value="">-- Seleccione un cliente --</option>
           </select>
+          <small style="color: #6b7280; display: block; margin-top: 5px;">
+            <i class="fas fa-info-circle"></i> Use el buscador para encontrar el cliente rápidamente
+          </small>
+        </div>
+
+        <!-- Información del cliente seleccionado -->
+        <div id="infoCliente" style="grid-column: 1 / -1; display: none; background: #f0f9ff; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+          <h4 style="margin: 0 0 10px 0; color: #667eea; font-size: 14px;">
+            <i class="fas fa-user-circle"></i> Información del Cliente
+          </h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; font-size: 13px;">
+            <div>
+              <strong>Nombre:</strong>
+              <div id="infoNombre" style="color: #374151;">-</div>
+            </div>
+            <div>
+              <strong>Cédula:</strong>
+              <div id="infoCedula" style="color: #374151;">-</div>
+            </div>
+            <div>
+              <strong>Teléfono:</strong>
+              <div id="infoTelefono" style="color: #374151;">-</div>
+            </div>
+            <div>
+              <strong>Dirección:</strong>
+              <div id="infoDireccion" style="color: #374151; grid-column: 1 / -1;">-</div>
+            </div>
+          </div>
         </div>
 
         <div class="form-group">
@@ -568,16 +615,59 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         </button>
       </div>
       <form class="form-grid" id="formPago">
+        <!-- Campo de búsqueda de préstamos -->
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label>
+            <i class="fas fa-search"></i> Buscar Préstamo por Cliente
+          </label>
+          <input
+            type="text"
+            id="buscarPrestamoModal"
+            class="search-input"
+            placeholder="Escribe el nombre o cédula del cliente..."
+            onkeyup="filtrarPrestamosModal()"
+            style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 5px;">
+        </div>
+
+        <!-- Select de préstamos (ahora filtrable) -->
         <div class="form-group" style="grid-column: 1 / -1;">
           <label>Seleccionar Préstamo *</label>
-          <select name="prestamo_id" id="prestamo_pago" required>
-            <option value="">-- Seleccione --</option>
+          <select name="prestamo_id" id="prestamo_pago" required size="5"
+            style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 5px;">
+            <option value="">-- Seleccione un préstamo --</option>
           </select>
+          <small style="color: #6b7280; display: block; margin-top: 5px;">
+            <i class="fas fa-info-circle"></i> Mostrando solo préstamos activos
+          </small>
         </div>
+
+        <!-- Información del préstamo seleccionado -->
+        <div id="infoPrestamo" style="grid-column: 1 / -1; display: none; background: #f0f9ff; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">
+          <h4 style="margin: 0 0 10px 0; color: #667eea; font-size: 14px;">
+            <i class="fas fa-info-circle"></i> Información del Préstamo
+          </h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; font-size: 13px;">
+            <div>
+              <strong>Cliente:</strong>
+              <div id="infoCliente" style="color: #374151;">-</div>
+            </div>
+            <div>
+              <strong>Cuota Diaria:</strong>
+              <div id="infoCuota" style="color: #10b981; font-weight: 600;">-</div>
+            </div>
+            <div>
+              <strong>Saldo Pendiente:</strong>
+              <div id="infoSaldo" style="color: #ef4444; font-weight: 600;">-</div>
+            </div>
+          </div>
+        </div>
+
         <div class="form-group">
           <label>Monto a Pagar *</label>
-          <input type="number" name="monto_pagado" id="monto_pagado" required placeholder="20000" min="0" step="0.01">
+          <input type="number" name="monto_pagado" id="monto_pagado" required
+            placeholder="20000" min="0" step="0.01">
         </div>
+
         <div class="form-group">
           <label>Método de Pago *</label>
           <select name="metodo_pago" required>
@@ -587,10 +677,12 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
             <option value="daviplata">Daviplata</option>
           </select>
         </div>
+
         <div class="form-group" style="grid-column: 1 / -1;">
           <label>Observaciones</label>
           <textarea name="observacion" rows="2" placeholder="Notas sobre el pago..."></textarea>
         </div>
+
         <div style="display: flex; gap: 10px; margin-top: 20px; grid-column: 1 / -1;">
           <button type="submit" class="btn btn-success" style="flex: 1;">
             <i class="fas fa-save"></i> Registrar Pago
@@ -837,37 +929,127 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       }
     }
 
+    // Variables globales para paginación de clientes
+    let clientesData = [];
+    let clientesPaginaActual = 1;
+    const clientesPorPagina = 10;
+
     async function cargarClientes() {
       try {
         const response = await fetch('/php/obtener_cliente.php');
-        const clientes = await response.json();
+        clientesData = await response.json();
 
-        const tbody = document.getElementById('clientesTable');
-        if (clientes.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No hay clientes registrados</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = clientes.map(cliente => `
-          <tr>
-            <td>${cliente.cedula}</td>
-            <td>${cliente.nombre}</td>
-            <td>${cliente.telefono}</td>
-            <td>${cliente.direccion}</td>
-            <td>${cliente.correo || '-'}</td>
-            <td>
-              <button class="btn btn-primary btn-sm" onclick="abrirEditarCliente('${cliente.cedula}')">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="btn btn-danger btn-sm" onclick="eliminarCliente('${cliente.cedula}')">
-                <i class="fas fa-trash"></i>
-              </button>
-            </td>
-          </tr>
-        `).join('');
+        renderizarClientes();
       } catch (error) {
         console.error('Error cargando clientes:', error);
       }
+    }
+
+    function renderizarClientes() {
+      const tbody = document.getElementById('clientesTable');
+
+      if (clientesData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No hay clientes registrados</td></tr>';
+        return;
+      }
+
+      // Aplicar filtro de búsqueda si existe
+      const busqueda = document.getElementById('buscarCliente')?.value.toLowerCase() || '';
+      const clientesFiltrados = clientesData.filter(cliente =>
+        cliente.nombre.toLowerCase().includes(busqueda) ||
+        cliente.cedula.toLowerCase().includes(busqueda)
+      );
+
+      // Calcular paginación
+      const totalPaginas = Math.ceil(clientesFiltrados.length / clientesPorPagina);
+      const inicio = (clientesPaginaActual - 1) * clientesPorPagina;
+      const fin = inicio + clientesPorPagina;
+      const clientesPagina = clientesFiltrados.slice(inicio, fin);
+
+      // Renderizar tabla
+      tbody.innerHTML = clientesPagina.map(cliente => `
+    <tr>
+      <td>${cliente.cedula}</td>
+      <td>${cliente.nombre}</td>
+      <td>${cliente.telefono}</td>
+      <td>${cliente.direccion}</td>
+      <td>${cliente.correo || '-'}</td>
+      <td>
+        <button class="btn btn-primary btn-sm" onclick="abrirEditarCliente('${cliente.cedula}')">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarCliente('${cliente.cedula}')">
+          <i class="fas fa-trash"></i>
+        </button>
+      </td>
+    </tr>
+  `).join('');
+
+      // Renderizar controles de paginación
+      renderizarPaginacionClientes(totalPaginas, clientesFiltrados.length);
+    }
+
+    function renderizarPaginacionClientes(totalPaginas, totalRegistros) {
+      const container = document.querySelector('#clientes .table-container');
+
+      // Buscar si ya existe el div de paginación
+      let paginacionDiv = container.querySelector('.pagination-controls');
+
+      if (!paginacionDiv) {
+        paginacionDiv = document.createElement('div');
+        paginacionDiv.className = 'pagination-controls';
+        paginacionDiv.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background: #f9fafb; border-radius: 8px;';
+        container.appendChild(paginacionDiv);
+      }
+
+      if (totalPaginas <= 1) {
+        paginacionDiv.innerHTML = `
+      <div style="color: #6b7280; font-size: 14px;">
+        Total: ${totalRegistros} cliente${totalRegistros !== 1 ? 's' : ''}
+      </div>
+    `;
+        return;
+      }
+
+      paginacionDiv.innerHTML = `
+    <div style="color: #6b7280; font-size: 14px;">
+      Mostrando ${((clientesPaginaActual - 1) * clientesPorPagina) + 1} - ${Math.min(clientesPaginaActual * clientesPorPagina, totalRegistros)} de ${totalRegistros}
+    </div>
+    <div style="display: flex; gap: 5px;">
+      <button 
+        class="btn btn-sm btn-primary" 
+        onclick="cambiarPaginaClientes(${clientesPaginaActual - 1})"
+        ${clientesPaginaActual === 1 ? 'disabled' : ''}
+        style="${clientesPaginaActual === 1 ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
+      >
+        <i class="fas fa-chevron-left"></i> Anterior
+      </button>
+      <span style="padding: 8px 15px; background: white; border-radius: 5px; font-weight: 600;">
+        ${clientesPaginaActual} / ${totalPaginas}
+      </span>
+      <button 
+        class="btn btn-sm btn-primary" 
+        onclick="cambiarPaginaClientes(${clientesPaginaActual + 1})"
+        ${clientesPaginaActual === totalPaginas ? 'disabled' : ''}
+        style="${clientesPaginaActual === totalPaginas ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
+      >
+        Siguiente <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  `;
+    }
+
+    function cambiarPaginaClientes(nuevaPagina) {
+      const totalPaginas = Math.ceil(clientesData.length / clientesPorPagina);
+      if (nuevaPagina >= 1 && nuevaPagina <= totalPaginas) {
+        clientesPaginaActual = nuevaPagina;
+        renderizarClientes();
+      }
+    }
+
+    function filtrarClientes() {
+      clientesPaginaActual = 1; // Resetear a la primera página al filtrar
+      renderizarClientes();
     }
 
     // Función de registrar cliente
@@ -978,15 +1160,11 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       });
     }
 
-    function filtrarClientes() {
-      const busqueda = document.getElementById('buscarCliente').value.toLowerCase();
-      const filas = document.querySelectorAll('#clientesTable tr');
 
-      filas.forEach(fila => {
-        const texto = fila.textContent.toLowerCase();
-        fila.style.display = texto.includes(busqueda) ? '' : 'none';
-      });
-    }
+    // Variables globales para paginación de préstamos
+    let prestamosData = [];
+    let prestamosPaginaActual = 1;
+    const prestamosPorPagina = 10;
 
     async function cargarPrestamos() {
       try {
@@ -997,33 +1175,135 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         }
 
         const response = await fetch(url);
-        const prestamos = await response.json();
+        prestamosData = await response.json();
+        prestamosPaginaActual = 1;
 
-        const tbody = document.getElementById('prestamosTable');
-        if (prestamos.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">No hay préstamos registrados</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = prestamos.map(p => `
-          <tr>
-            <td>#${p.id}</td>
-            <td>${p.cliente_nombre}</td>
-            <td>${formatMoney(p.monto)}</td>
-            <td>${p.interes}%</td>
-            <td>${formatMoney(p.cuota_diaria)}</td>
-            <td>${p.fecha_inicio}</td>
-            <td>${formatMoney(p.saldo_pendiente)}</td>
-            <td><span class="badge badge-${p.estado === 'activo' ? 'success' : 'secondary'}">${p.estado}</span></td>
-            <td>
-              <button class="btn btn-primary btn-sm" onclick="verDetallePrestamo(${p.id})" title="Ver detalles">
-                <i class="fas fa-eye"></i>
-              </button>
-            </td>
-          </tr>
-        `).join('');
+        renderizarPrestamos();
       } catch (error) {
         console.error('Error cargando préstamos:', error);
+      }
+    }
+
+    function renderizarPrestamos() {
+      const tbody = document.getElementById('prestamosTable');
+
+      if (prestamosData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">No hay préstamos registrados</td></tr>';
+        return;
+      }
+
+      // Aplicar filtro de búsqueda
+      const busqueda = document.getElementById('buscarPrestamo')?.value.toLowerCase() || '';
+      const prestamosFiltrados = prestamosData.filter(p =>
+        p.cliente_nombre.toLowerCase().includes(busqueda) ||
+        p.id.toString().includes(busqueda) ||
+        p.cliente_cedula.toLowerCase().includes(busqueda)
+      );
+
+      if (prestamosFiltrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">No se encontraron préstamos</td></tr>';
+        return;
+      }
+
+      // Calcular paginación
+      const totalPaginas = Math.ceil(prestamosFiltrados.length / prestamosPorPagina);
+      const inicio = (prestamosPaginaActual - 1) * prestamosPorPagina;
+      const fin = inicio + prestamosPorPagina;
+      const prestamosPagina = prestamosFiltrados.slice(inicio, fin);
+
+      tbody.innerHTML = prestamosPagina.map(p => `
+    <tr>
+      <td>#${p.id}</td>
+      <td>${p.cliente_nombre}</td>
+      <td>${formatMoney(p.monto)}</td>
+      <td>${p.interes}%</td>
+      <td>${formatMoney(p.cuota_diaria)}</td>
+      <td>${p.fecha_inicio}</td>
+      <td>${formatMoney(p.saldo_pendiente)}</td>
+      <td>
+        <span class="badge badge-${
+          p.estado === 'activo' ? 'success' : 
+          p.estado === 'cancelado' ? 'danger' : 
+          'secondary'
+        }">${p.estado}</span>
+      </td>
+      <td>
+        <button class="btn btn-primary btn-sm" onclick="verDetallePrestamo(${p.id})" title="Ver detalles">
+          <i class="fas fa-eye"></i>
+        </button>
+      </td>
+    </tr>
+  `).join('');
+
+      renderizarPaginacionPrestamos(totalPaginas, prestamosFiltrados.length);
+    }
+
+    function filtrarPrestamos() {
+      prestamosPaginaActual = 1; // Resetear a página 1 al filtrar
+      renderizarPrestamos();
+    }
+
+    function renderizarPaginacionPrestamos(totalPaginas, totalRegistros) {
+      const container = document.querySelector('#prestamos .table-container');
+
+      let paginacionDiv = container.querySelector('.pagination-controls');
+
+      if (!paginacionDiv) {
+        paginacionDiv = document.createElement('div');
+        paginacionDiv.className = 'pagination-controls';
+        paginacionDiv.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding: 10px; background: #f9fafb; border-radius: 8px;';
+        container.appendChild(paginacionDiv);
+      }
+
+      if (totalPaginas <= 1) {
+        paginacionDiv.innerHTML = `
+      <div style="color: #6b7280; font-size: 14px;">
+        Total: ${totalRegistros} préstamo${totalRegistros !== 1 ? 's' : ''}
+      </div>
+    `;
+        return;
+      }
+
+      paginacionDiv.innerHTML = `
+    <div style="color: #6b7280; font-size: 14px;">
+      Mostrando ${((prestamosPaginaActual - 1) * prestamosPorPagina) + 1} - ${Math.min(prestamosPaginaActual * prestamosPorPagina, totalRegistros)} de ${totalRegistros}
+    </div>
+    <div style="display: flex; gap: 5px;">
+      <button 
+        class="btn btn-sm btn-primary" 
+        onclick="cambiarPaginaPrestamos(${prestamosPaginaActual - 1})"
+        ${prestamosPaginaActual === 1 ? 'disabled' : ''}
+        style="${prestamosPaginaActual === 1 ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
+      >
+        <i class="fas fa-chevron-left"></i> Anterior
+      </button>
+      <span style="padding: 8px 15px; background: white; border-radius: 5px; font-weight: 600;">
+        ${prestamosPaginaActual} / ${totalPaginas}
+      </span>
+      <button 
+        class="btn btn-sm btn-primary" 
+        onclick="cambiarPaginaPrestamos(${prestamosPaginaActual + 1})"
+        ${prestamosPaginaActual === totalPaginas ? 'disabled' : ''}
+        style="${prestamosPaginaActual === totalPaginas ? 'opacity: 0.5; cursor: not-allowed;' : ''}"
+      >
+        Siguiente <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+  `;
+    }
+
+    function cambiarPaginaPrestamos(nuevaPagina) {
+      const busqueda = document.getElementById('buscarPrestamo')?.value.toLowerCase() || '';
+      const prestamosFiltrados = prestamosData.filter(p =>
+        p.cliente_nombre.toLowerCase().includes(busqueda) ||
+        p.id.toString().includes(busqueda) ||
+        p.cliente_cedula.toLowerCase().includes(busqueda)
+      );
+
+      const totalPaginas = Math.ceil(prestamosFiltrados.length / prestamosPorPagina);
+      if (nuevaPagina >= 1 && nuevaPagina <= totalPaginas) {
+        prestamosPaginaActual = nuevaPagina;
+        renderizarPrestamos();
       }
     }
 
@@ -1081,16 +1361,168 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       }
     }
 
+    // Variables globales para clientes en modal de préstamo
+    let clientesModalData = [];
+
     async function cargarClientesSelect() {
       try {
         const response = await fetch('/php/obtener_cliente.php');
         const clientes = await response.json();
 
-        const select = document.getElementById('cliente_id');
-        select.innerHTML = '<option value="">-- Seleccione un cliente --</option>' +
-          clientes.map(c => `<option value="${c.id}">${c.nombre} - ${c.cedula}</option>`).join('');
+        // Guardar clientes globalmente
+        clientesModalData = clientes;
+
+        if (clientesModalData.length === 0) {
+          document.getElementById('cliente_id').innerHTML =
+            '<option value="">No hay clientes registrados</option>';
+          return;
+        }
+
+        // Renderizar todos los clientes inicialmente
+        renderizarClientesModal(clientesModalData);
+
+        // Configurar evento de cambio en el select
+        document.getElementById('cliente_id').addEventListener('change', function() {
+          mostrarInfoCliente(this.value);
+        });
+
+        // Limpiar búsqueda al abrir modal
+        document.getElementById('buscarClienteModal').value = '';
+
       } catch (error) {
         console.error('Error cargando clientes:', error);
+        document.getElementById('cliente_id').innerHTML =
+          '<option value="">Error al cargar clientes</option>';
+      }
+    }
+
+    function renderizarClientesModal(clientes) {
+      const select = document.getElementById('cliente_id');
+
+      if (clientes.length === 0) {
+        select.innerHTML = '<option value="">No se encontraron clientes</option>';
+        return;
+      }
+
+      select.innerHTML = '<option value="">-- Seleccione un cliente --</option>' +
+        clientes.map(c => {
+          return `<option value="${c.id}" 
+                        data-nombre="${c.nombre}"
+                        data-cedula="${c.cedula}"
+                        data-telefono="${c.telefono || 'N/A'}"
+                        data-direccion="${c.direccion || 'N/A'}">
+                    ${c.nombre} - ${c.cedula} ${c.telefono ? '(' + c.telefono + ')' : ''}
+                </option>`;
+        }).join('');
+    }
+
+    function filtrarClientesModal() {
+      const busqueda = document.getElementById('buscarClienteModal').value.toLowerCase();
+
+      if (!busqueda.trim()) {
+        // Si no hay búsqueda, mostrar todos
+        renderizarClientesModal(clientesModalData);
+        return;
+      }
+
+      // Filtrar clientes
+      const clientesFiltrados = clientesModalData.filter(c =>
+        c.nombre.toLowerCase().includes(busqueda) ||
+        c.cedula.toLowerCase().includes(busqueda) ||
+        (c.telefono && c.telefono.toLowerCase().includes(busqueda))
+      );
+
+      renderizarClientesModal(clientesFiltrados);
+
+      // Si solo hay un resultado, seleccionarlo automáticamente
+      if (clientesFiltrados.length === 1) {
+        const select = document.getElementById('cliente_id');
+        select.selectedIndex = 1; // Seleccionar el primer cliente (después de la opción vacía)
+        mostrarInfoCliente(clientesFiltrados[0].id);
+      }
+    }
+
+    function mostrarInfoCliente(clienteId) {
+      const infoDiv = document.getElementById('infoCliente');
+      const select = document.getElementById('cliente_id');
+      const selectedOption = select.options[select.selectedIndex];
+
+      if (!clienteId || clienteId === '') {
+        infoDiv.style.display = 'none';
+        return;
+      }
+
+      // Obtener datos del option seleccionado
+      const nombre = selectedOption.getAttribute('data-nombre');
+      const cedula = selectedOption.getAttribute('data-cedula');
+      const telefono = selectedOption.getAttribute('data-telefono');
+      const direccion = selectedOption.getAttribute('data-direccion');
+
+      // Mostrar información
+      document.getElementById('infoNombre').textContent = nombre;
+      document.getElementById('infoCedula').textContent = cedula;
+      document.getElementById('infoTelefono').textContent = telefono;
+      document.getElementById('infoDireccion').textContent = direccion;
+
+      // Mostrar el div de información
+      infoDiv.style.display = 'block';
+    }
+
+    // Actualizar la función closeModal para incluir limpieza del modal de préstamo
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      modal.classList.remove('active');
+
+      if (modalId === 'modalCliente') {
+        document.getElementById('formCliente').reset();
+      }
+
+      if (modalId === 'modalPrestamo') {
+        document.getElementById('formPrestamo').reset();
+        document.getElementById('buscarClienteModal').value = '';
+        document.getElementById('infoCliente').style.display = 'none';
+
+        // Resetear cálculos
+        document.getElementById('montoTotal').textContent = '$0';
+        document.getElementById('cuotaDiaria').textContent = '$0';
+        document.getElementById('fechaVencimiento').textContent = '--';
+
+        // Recargar todos los clientes
+        if (clientesModalData.length > 0) {
+          renderizarClientesModal(clientesModalData);
+        }
+      }
+
+      if (modalId === 'modalPago') {
+        document.getElementById('formPago').reset();
+        document.getElementById('buscarPrestamoModal').value = '';
+        document.getElementById('infoPrestamo').style.display = 'none';
+
+        // Recargar todos los préstamos
+        if (prestamosActivosData.length > 0) {
+          renderizarPrestamosModal(prestamosActivosData);
+        }
+      }
+
+      if (modalId === 'modalUsuario') {
+        document.getElementById('formUsuario').reset();
+      }
+
+      if (modalId === 'modalEditarUsuario') {
+        document.getElementById('formEditarUsuario').reset();
+      }
+    }
+
+    // Asegurarse de que openModal llame a la función correcta
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.add('active');
+
+      if (modalId === 'modalPrestamo') {
+        cargarClientesSelect();
+      }
+
+      if (modalId === 'modalPago') {
+        cargarPrestamosSelect();
       }
     }
 
@@ -1340,35 +1772,132 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       }
     }
 
+    // Variables globales para préstamos en modal
+    let prestamosActivosData = [];
+
     async function cargarPrestamosSelect() {
       try {
         const response = await fetch('/php/obtener_prestamos.php');
         const prestamos = await response.json();
 
-        const select = document.getElementById('prestamo_pago');
+        // Guardar solo préstamos activos
+        prestamosActivosData = prestamos.filter(p => p.estado === 'activo');
 
-        const prestamosActivos = prestamos.filter(p => p.estado === 'activo');
-
-        if (prestamosActivos.length === 0) {
-          select.innerHTML = '<option value="">No hay préstamos activos</option>';
+        if (prestamosActivosData.length === 0) {
+          document.getElementById('prestamo_pago').innerHTML =
+            '<option value="">No hay préstamos activos</option>';
           return;
         }
 
-        select.innerHTML = '<option value="">-- Seleccione --</option>' +
-          prestamosActivos.map(p =>
-            `<option value="${p.id}" data-cuota="${p.cuota_diaria}">${p.cliente_nombre} - Préstamo #${p.id} - Cuota: ${formatMoney(p.cuota_diaria)}</option>`
-          ).join('');
+        // Renderizar todos los préstamos inicialmente
+        renderizarPrestamosModal(prestamosActivosData);
 
-        // Auto-llenar monto cuando se selecciona un préstamo
-        select.addEventListener('change', function() {
-          const selectedOption = this.options[this.selectedIndex];
-          const cuota = selectedOption.getAttribute('data-cuota');
-          if (cuota) {
-            document.getElementById('monto_pagado').value = cuota;
-          }
+        // Configurar evento de cambio en el select
+        document.getElementById('prestamo_pago').addEventListener('change', function() {
+          mostrarInfoPrestamo(this.value);
         });
+
+        // Limpiar búsqueda al abrir modal
+        document.getElementById('buscarPrestamoModal').value = '';
+
       } catch (error) {
         console.error('Error cargando préstamos:', error);
+        document.getElementById('prestamo_pago').innerHTML =
+          '<option value="">Error al cargar préstamos</option>';
+      }
+    }
+
+    function renderizarPrestamosModal(prestamos) {
+      const select = document.getElementById('prestamo_pago');
+
+      if (prestamos.length === 0) {
+        select.innerHTML = '<option value="">No se encontraron préstamos</option>';
+        return;
+      }
+
+      select.innerHTML = '<option value="">-- Seleccione un préstamo --</option>' +
+        prestamos.map(p => {
+          const cuota = parseFloat(p.cuota_diaria);
+          const saldo = parseFloat(p.saldo_pendiente);
+          return `<option value="${p.id}" 
+                        data-cuota="${cuota}" 
+                        data-saldo="${saldo}"
+                        data-cliente="${p.cliente_nombre}"
+                        data-cedula="${p.cliente_cedula}">
+                    ${p.cliente_nombre} (${p.cliente_cedula}) - Préstamo #${p.id} - Cuota: ${formatMoney(cuota)}
+                </option>`;
+        }).join('');
+    }
+
+    function filtrarPrestamosModal() {
+      const busqueda = document.getElementById('buscarPrestamoModal').value.toLowerCase();
+
+      if (!busqueda.trim()) {
+        // Si no hay búsqueda, mostrar todos
+        renderizarPrestamosModal(prestamosActivosData);
+        return;
+      }
+
+      // Filtrar préstamos
+      const prestamosFiltrados = prestamosActivosData.filter(p =>
+        p.cliente_nombre.toLowerCase().includes(busqueda) ||
+        p.cliente_cedula.toLowerCase().includes(busqueda) ||
+        p.id.toString().includes(busqueda)
+      );
+
+      renderizarPrestamosModal(prestamosFiltrados);
+
+      // Si solo hay un resultado, seleccionarlo automáticamente
+      if (prestamosFiltrados.length === 1) {
+        const select = document.getElementById('prestamo_pago');
+        select.selectedIndex = 1; // Seleccionar el primer préstamo (después de la opción vacía)
+        mostrarInfoPrestamo(prestamosFiltrados[0].id);
+      }
+    }
+
+    function mostrarInfoPrestamo(prestamoId) {
+      const infoDiv = document.getElementById('infoPrestamo');
+      const select = document.getElementById('prestamo_pago');
+      const selectedOption = select.options[select.selectedIndex];
+
+      if (!prestamoId || prestamoId === '') {
+        infoDiv.style.display = 'none';
+        document.getElementById('monto_pagado').value = '';
+        return;
+      }
+
+      // Obtener datos del option seleccionado
+      const cuota = selectedOption.getAttribute('data-cuota');
+      const saldo = selectedOption.getAttribute('data-saldo');
+      const cliente = selectedOption.getAttribute('data-cliente');
+      const cedula = selectedOption.getAttribute('data-cedula');
+
+      // Mostrar información
+      document.getElementById('infoCliente').textContent = `${cliente} (${cedula})`;
+      document.getElementById('infoCuota').textContent = formatMoney(parseFloat(cuota));
+      document.getElementById('infoSaldo').textContent = formatMoney(parseFloat(saldo));
+
+      // Auto-llenar monto con la cuota diaria
+      document.getElementById('monto_pagado').value = cuota;
+
+      // Mostrar el div de información
+      infoDiv.style.display = 'block';
+    }
+
+    // Limpiar al cerrar modal
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      modal.classList.remove('active');
+
+      if (modalId === 'modalPago') {
+        document.getElementById('formPago').reset();
+        document.getElementById('buscarPrestamoModal').value = '';
+        document.getElementById('infoPrestamo').style.display = 'none';
+
+        // Recargar todos los préstamos
+        if (prestamosActivosData.length > 0) {
+          renderizarPrestamosModal(prestamosActivosData);
+        }
       }
     }
 
@@ -1617,8 +2146,17 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       }).format(amount);
     }
 
+    // Función para obtener la fecha actual en formato YYYY-MM-DD (zona horaria local)
+    function obtenerFechaActual() {
+      const hoy = new Date();
+      const year = hoy.getFullYear();
+      const month = String(hoy.getMonth() + 1).padStart(2, '0');
+      const day = String(hoy.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
-      const today = new Date().toISOString().split('T')[0];
+      const today = obtenerFechaActual();
       document.getElementById('fecha_inicio').value = today;
       document.getElementById('fechaPago').value = today;
 
