@@ -476,7 +476,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     </div>
   </div>
 
-  <!-- Modal Préstamo -->
+  <!-- Modal Préstamo - REEMPLAZAR COMPLETO en admin.php -->
   <div class="modal" id="modalPrestamo">
     <div class="modal-content">
       <div class="modal-header">
@@ -492,16 +492,13 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           <label>
             <i class="fas fa-search"></i> Buscar Cliente
           </label>
-          <input
-            type="text"
-            id="buscarClienteModal"
-            class="search-input"
+          <input type="text" id="buscarClienteModal" class="search-input"
             placeholder="Escribe el nombre o cédula del cliente..."
             onkeyup="filtrarClientesModal()"
             style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 5px;">
         </div>
 
-        <!-- Select de clientes (ahora filtrable) -->
+        <!-- Select de clientes -->
         <div class="form-group" style="grid-column: 1 / -1;">
           <label for="cliente_id">Seleccionar Cliente *</label>
           <select name="cliente_id" id="cliente_id" required size="5"
@@ -538,6 +535,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           </div>
         </div>
 
+        <!-- Campos del préstamo -->
         <div class="form-group">
           <label for="monto">Monto del Préstamo *</label>
           <input type="number" name="monto" id="monto" required min="0" placeholder="500000">
@@ -558,26 +556,56 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           <input type="date" name="fecha_inicio" id="fecha_inicio" required>
         </div>
 
+        <!-- RESUMEN DEL PRÉSTAMO CON BOLETAS -->
         <div class="form-group" style="grid-column: 1 / -1; background: #f0f9ff; padding: 15px; border-radius: 8px;">
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+          <h4 style="margin: 0 0 15px 0; color: #667eea; font-size: 16px;">
+            <i class="fas fa-calculator"></i> Resumen del Préstamo
+          </h4>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px;">
             <div>
               <div style="font-size: 12px; color: #6b7280;">Monto Total a Pagar</div>
               <div style="font-size: 20px; font-weight: 700; color: var(--primary-color);" id="montoTotal">$0</div>
             </div>
+
             <div>
-              <div style="font-size: 12px; color: #6b7280;">Cuota Diaria</div>
+              <div style="font-size: 12px; color: #6b7280;">Cuota Diaria Normal</div>
               <div style="font-size: 20px; font-weight: 700; color: var(--success-color);" id="cuotaDiaria">$0</div>
             </div>
+
             <div>
               <div style="font-size: 12px; color: #6b7280;">Fecha de Vencimiento</div>
               <div style="font-size: 20px; font-weight: 700; color: var(--dark-color);" id="fechaVencimiento">--</div>
             </div>
           </div>
+
+          <!-- Información de la boleta/rifa -->
+          <div style="margin-top: 15px; padding: 15px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+            <h4 style="margin: 0 0 10px 0; color: #f59e0b; font-size: 14px;">
+              <i class="fas fa-ticket-alt"></i> Sistema de Boletas (Rifa)
+            </h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+              <div>
+                <div style="font-size: 12px; color: #78350f;">Valor de Boleta</div>
+                <div style="font-size: 18px; font-weight: 700; color: #f59e0b;" id="valorBoleta">$0</div>
+              </div>
+              <div>
+                <div style="font-size: 12px; color: #78350f;">Primera Cuota (con descuento)</div>
+                <div style="font-size: 18px; font-weight: 700; color: #10b981;" id="primeraCuota">$0</div>
+              </div>
+            </div>
+            <small style="display: block; margin-top: 8px; color: #78350f; font-style: italic;">
+              <i class="fas fa-info-circle"></i> El valor de la boleta se descuenta de la primera cuota únicamente
+            </small>
+          </div>
         </div>
 
+        <!-- Campos ocultos -->
         <input type="hidden" name="cuota_diaria" id="cuota_diaria">
         <input type="hidden" name="fecha_fin" id="fecha_fin">
+        <input type="hidden" name="valor_boleta" id="valor_boleta">
 
+        <!-- Botones -->
         <div style="display: flex; gap: 10px; margin-top: 20px; grid-column: 1 / -1;">
           <button type="submit" class="btn btn-success" style="flex: 1;">
             <i class="fas fa-save"></i> Registrar Préstamo
@@ -649,7 +677,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; font-size: 13px;">
             <div>
               <strong>Cliente:</strong>
-              <div id="infoCliente" style="color: #374151;">-</div>
+              <div id="infoPagoCliente" style="color: #374151;">-</div>
             </div>
             <div>
               <strong>Cuota Diaria:</strong>
@@ -1319,19 +1347,82 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
         const prestamo = data.prestamo;
         const pagos = data.pagos || [];
+        const boleta = data.boleta || null;
+
+        // Calcular primera cuota si hay boleta
+        const valorBoleta = boleta ? parseFloat(boleta.valor_boleta) : 0;
+        const cuotaDiaria = parseFloat(prestamo.cuota_diaria);
+        const primeraCuota = cuotaDiaria - valorBoleta;
+
+        // Botón de marcar ganador (solo si está activo y no ha ganado)
+        let botonGanador = '';
+        if (prestamo.estado === 'activo' && boleta && !boleta.gano_rifa) {
+          botonGanador = `
+                <div style="margin-top: 20px; padding: 15px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                    <h4 style="margin: 0 0 10px 0; color: #f59e0b;">
+                        <i class="fas fa-ticket-alt"></i> Sistema de Rifas
+                    </h4>
+                    <p style="margin: 0 0 10px 0; font-size: 13px; color: #78350f;">
+                        Si el cliente ganó la rifa, puede cancelar completamente su préstamo:
+                    </p>
+                    <button class="btn btn-warning" onclick="marcarGanadorRifa(${prestamoId})" 
+                            style="width: 100%;">
+                        <i class="fas fa-trophy"></i> Marcar como Ganador de Rifa
+                    </button>
+                </div>
+            `;
+        }
+
+        // Info si ya ganó
+        let infoGanador = '';
+        if (boleta && boleta.gano_rifa) {
+          infoGanador = `
+                <div style="margin-top: 20px; padding: 15px; background: #d1fae5; border-radius: 8px; border-left: 4px solid #10b981;">
+                    <h4 style="margin: 0 0 10px 0; color: #10b981;">
+                        <i class="fas fa-trophy"></i> ¡Cliente Ganador de Rifa!
+                    </h4>
+                    <p style="margin: 5px 0;"><strong>Fecha:</strong> ${boleta.fecha_rifa || 'No registrada'}</p>
+                    <p style="margin: 5px 0;"><strong>Observación:</strong> ${boleta.observacion_rifa || '-'}</p>
+                </div>
+            `;
+        }
+
+        // Información de la boleta
+        let infoBoleta = '';
+        if (boleta && valorBoleta > 0) {
+          infoBoleta = `
+                <div style="background: #fef3c7; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                    <h5 style="margin: 0 0 8px 0; color: #f59e0b;">
+                        <i class="fas fa-ticket-alt"></i> Información de Boleta
+                    </h5>
+                    <p style="margin: 3px 0;"><strong>Valor Boleta:</strong> ${formatMoney(valorBoleta)}</p>
+                    <p style="margin: 3px 0;"><strong>Primera Cuota:</strong> ${formatMoney(primeraCuota)}</p>
+                    <p style="margin: 3px 0;">
+                        <strong>Estado:</strong> 
+                        ${boleta.boleta_descontada ? 
+                            '<span style="color: #10b981;">✓ Descontada el ' + boleta.fecha_descuento + '</span>' : 
+                            '<span style="color: #f59e0b;">Pendiente de descuento</span>'
+                        }
+                    </p>
+                </div>
+            `;
+        }
 
         let htmlPagos = '';
         if (pagos.length > 0) {
           htmlPagos = '<h4 style="margin-top: 20px;">Historial de Pagos:</h4><div style="max-height: 300px; overflow-y: auto;">';
-          pagos.forEach(pago => {
+          pagos.forEach((pago, index) => {
+            const esPrimerPago = (index === 0);
+            const bgColor = esPrimerPago ? '#fef3c7' : '#f3f4f6';
             htmlPagos += `
-              <div style="border: 1px solid #e5e7eb; padding: 10px; margin: 5px 0; border-radius: 5px;">
-                <p><strong>Fecha:</strong> ${pago.fecha_pago}</p>
-                <p><strong>Monto:</strong> ${formatMoney(pago.monto_pagado)}</p>
-                <p><strong>Método:</strong> ${pago.metodo_pago}</p>
-                ${pago.observacion ? `<p><strong>Observación:</strong> ${pago.observacion}</p>` : ''}
-              </div>
-            `;
+                    <div style="border: 1px solid #e5e7eb; padding: 10px; margin: 5px 0; border-radius: 5px; background: ${bgColor};">
+                        ${esPrimerPago && valorBoleta > 0 ? '<p style="margin: 0 0 5px 0; color: #f59e0b; font-weight: 600;"><i class="fas fa-ticket-alt"></i> PRIMERA CUOTA (Con descuento de boleta)</p>' : ''}
+                        <p style="margin: 3px 0;"><strong>Fecha:</strong> ${pago.fecha_pago}</p>
+                        <p style="margin: 3px 0;"><strong>Monto:</strong> ${formatMoney(pago.monto_pagado)}</p>
+                        <p style="margin: 3px 0;"><strong>Método:</strong> ${pago.metodo_pago}</p>
+                        ${pago.observacion ? `<p style="margin: 3px 0;"><strong>Observación:</strong> ${pago.observacion}</p>` : ''}
+                    </div>
+                `;
           });
           htmlPagos += '</div>';
         } else {
@@ -1339,19 +1430,26 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         }
 
         document.getElementById('contenidoDetallePrestamo').innerHTML = `
-          <div style="text-align: left;">
-            <h4>Información del Préstamo</h4>
-            <p><strong>ID:</strong> #${prestamo.id}</p>
-            <p><strong>Cliente:</strong> ${prestamo.cliente_nombre}</p>
-            <p><strong>Monto Inicial:</strong> ${formatMoney(prestamo.monto)}</p>
-            <p><strong>Interés:</strong> ${prestamo.interes}%</p>
-            <p><strong>Cuota Diaria:</strong> ${formatMoney(prestamo.cuota_diaria)}</p>
-            <p><strong>Fecha Inicio:</strong> ${prestamo.fecha_inicio}</p>
-            <p><strong>Fecha Fin:</strong> ${prestamo.fecha_fin}</p>
-            <p><strong>Saldo Pendiente:</strong> ${formatMoney(prestamo.saldo_pendiente)}</p>
-            <p><strong>Estado:</strong> <span class="badge badge-${prestamo.estado === 'activo' ? 'success' : 'secondary'}">${prestamo.estado.toUpperCase()}</span></p>
-            ${htmlPagos}
-          </div>
+            <div style="text-align: left;">
+                <h4>Información del Préstamo</h4>
+                <p><strong>ID:</strong> #${prestamo.id}</p>
+                <p><strong>Cliente:</strong> ${prestamo.cliente_nombre}</p>
+                <p><strong>Monto Inicial:</strong> ${formatMoney(prestamo.monto)}</p>
+                <p><strong>Interés:</strong> ${prestamo.interes}%</p>
+                <p><strong>Cuota Diaria:</strong> ${formatMoney(cuotaDiaria)}</p>
+                <p><strong>Fecha Inicio:</strong> ${prestamo.fecha_inicio}</p>
+                <p><strong>Fecha Fin:</strong> ${prestamo.fecha_fin}</p>
+                <p><strong>Saldo Pendiente:</strong> ${formatMoney(prestamo.saldo_pendiente)}</p>
+                <p><strong>Estado:</strong> <span class="badge badge-${
+                    prestamo.estado === 'activo' ? 'success' : 
+                    prestamo.estado === 'cancelado' ? 'danger' : 
+                    'secondary'
+                }">${prestamo.estado.toUpperCase()}</span></p>
+                ${infoBoleta}
+                ${infoGanador}
+                ${botonGanador}
+                ${htmlPagos}
+            </div>
         `;
 
         openModal('modalDetallePrestamo');
@@ -1532,12 +1630,29 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       const cuotas = parseInt(document.getElementById('cuotas').value) || 0;
       const fechaInicio = document.getElementById('fecha_inicio').value;
 
-      const montoTotal = monto + (monto * (interes / 100));
-      const cuotaDiaria = cuotas > 0 ? montoTotal / cuotas : 0;
+      // Calcular valor de la boleta según el monto
+      const valorBoleta = calcularValorBoleta(monto);
 
-      document.getElementById('montoTotal').textContent = formatMoney(montoTotal);
+      // Calcular monto total del préstamo (con interés)
+      const montoConInteres = monto + (monto * (interes / 100));
+
+      // Calcular cuota diaria normal
+      const cuotaDiaria = cuotas > 0 ? montoConInteres / cuotas : 0;
+
+      // Calcular primera cuota (cuota diaria - valor boleta)
+      const primeraCuota = cuotaDiaria - valorBoleta;
+
+      // Actualizar displays
+      document.getElementById('montoTotal').textContent = formatMoney(montoConInteres);
       document.getElementById('cuotaDiaria').textContent = formatMoney(cuotaDiaria);
       document.getElementById('cuota_diaria').value = cuotaDiaria.toFixed(2);
+
+      // Mostrar información de la boleta
+      document.getElementById('valorBoleta').textContent = formatMoney(valorBoleta);
+      document.getElementById('primeraCuota').textContent = formatMoney(primeraCuota);
+
+      // Guardar valor de boleta en campo oculto
+      document.getElementById('valor_boleta').value = valorBoleta.toFixed(2);
 
       if (fechaInicio && cuotas > 0) {
         const fecha = new Date(fechaInicio);
@@ -1546,6 +1661,53 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         document.getElementById('fechaVencimiento').textContent = vencimiento;
         document.getElementById('fecha_fin').value = vencimiento;
       }
+    }
+
+    // Función para calcular el valor de la boleta según el monto
+    function calcularValorBoleta(monto) {
+      const tablaBoletas = {
+        100000: 10000,
+        200000: 12000,
+        300000: 20000,
+        400000: 25000,
+        500000: 30000,
+        600000: 35000,
+        700000: 35000,
+        800000: 40000,
+        900000: 40000,
+        1000000: 50000
+      };
+
+      // Si el monto está exactamente en la tabla
+      if (tablaBoletas[monto]) {
+        return tablaBoletas[monto];
+      }
+
+      // Si es mayor a 1,000,000, calcular 5%
+      if (monto > 1000000) {
+        return Math.round(monto * 0.05);
+      }
+
+      // Para montos intermedios, interpolar
+      const montos = Object.keys(tablaBoletas).map(Number).sort((a, b) => a - b);
+
+      for (let i = 0; i < montos.length - 1; i++) {
+        const montoInferior = montos[i];
+        const montoSuperior = montos[i + 1];
+
+        if (monto > montoInferior && monto < montoSuperior) {
+          const valorInferior = tablaBoletas[montoInferior];
+          const valorSuperior = tablaBoletas[montoSuperior];
+
+          const porcentaje = (monto - montoInferior) / (montoSuperior - montoInferior);
+          const valorBoleta = valorInferior + ((valorSuperior - valorInferior) * porcentaje);
+
+          return Math.round(valorBoleta);
+        }
+      }
+
+      // Si es menor al mínimo, 10%
+      return Math.round(monto * 0.10);
     }
 
     document.getElementById('formPrestamo').addEventListener('submit', async function(e) {
@@ -1640,6 +1802,36 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
             </div>
           ` : ''}
         </div>
+
+            ${data.es_primer_pago && data.boleta ? `
+        <!-- Información de la Boleta/Rifa -->
+        <div style="margin-bottom: 15px; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 5px;">
+            <h4 style="margin: 0 0 10px 0; color: #f59e0b;">
+                <i class="fas fa-ticket-alt"></i> Descuento por Boleta (Primera Cuota)
+            </h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <p style="margin: 5px 0;"><strong>Valor de Boleta:</strong></p>
+                    <p style="margin: 5px 0; font-size: 18px; color: #f59e0b; font-weight: 600;">
+                        -${formatMoney(data.boleta.valor)}
+                    </p>
+                </div>
+                <div>
+                    <p style="margin: 5px 0;"><strong>Cuota Esperada:</strong></p>
+                    <p style="margin: 5px 0; font-size: 18px; color: #10b981; font-weight: 600;">
+                        ${formatMoney(data.boleta.cuota_esperada)}
+                    </p>
+                </div>
+            </div>
+            <div style="margin-top: 10px; padding: 10px; background: white; border-radius: 5px;">
+                <p style="margin: 0; font-size: 12px; color: #78350f;">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Nota:</strong> Esta es la primera cuota. Se ha aplicado el descuento por boleta/rifa.
+                    Las siguientes cuotas serán de ${formatMoney(data.prestamo.cuota_diaria)}
+                </p>
+            </div>
+        </div>
+    ` : ''}
 
         <!-- Información del Préstamo -->
         <div style="margin-bottom: 15px; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 5px;">
@@ -1856,33 +2048,33 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     }
 
     function mostrarInfoPrestamo(prestamoId) {
-      const infoDiv = document.getElementById('infoPrestamo');
-      const select = document.getElementById('prestamo_pago');
-      const selectedOption = select.options[select.selectedIndex];
+    const infoDiv = document.getElementById('infoPrestamo');
+    const select = document.getElementById('prestamo_pago');
+    const selectedOption = select.options[select.selectedIndex];
 
-      if (!prestamoId || prestamoId === '') {
+    if (!prestamoId || prestamoId === '') {
         infoDiv.style.display = 'none';
         document.getElementById('monto_pagado').value = '';
         return;
-      }
-
-      // Obtener datos del option seleccionado
-      const cuota = selectedOption.getAttribute('data-cuota');
-      const saldo = selectedOption.getAttribute('data-saldo');
-      const cliente = selectedOption.getAttribute('data-cliente');
-      const cedula = selectedOption.getAttribute('data-cedula');
-
-      // Mostrar información
-      document.getElementById('infoCliente').textContent = `${cliente} (${cedula})`;
-      document.getElementById('infoCuota').textContent = formatMoney(parseFloat(cuota));
-      document.getElementById('infoSaldo').textContent = formatMoney(parseFloat(saldo));
-
-      // Auto-llenar monto con la cuota diaria
-      document.getElementById('monto_pagado').value = cuota;
-
-      // Mostrar el div de información
-      infoDiv.style.display = 'block';
     }
+
+    // Obtener datos del option seleccionado
+    const cuota = selectedOption.getAttribute('data-cuota');
+    const saldo = selectedOption.getAttribute('data-saldo');
+    const cliente = selectedOption.getAttribute('data-cliente');
+    const cedula = selectedOption.getAttribute('data-cedula');
+
+    // Mostrar información - CORREGIDO: usar 'infoPagoCliente' en lugar de 'infoCliente'
+    document.getElementById('infoPagoCliente').textContent = `${cliente} (${cedula})`;
+    document.getElementById('infoCuota').textContent = formatMoney(parseFloat(cuota));
+    document.getElementById('infoSaldo').textContent = formatMoney(parseFloat(saldo));
+
+    // Auto-llenar monto con la cuota diaria
+    document.getElementById('monto_pagado').value = cuota;
+
+    // Mostrar el div de información
+    infoDiv.style.display = 'block';
+}
 
     // Limpiar al cerrar modal
     function closeModal(modalId) {
@@ -2169,8 +2361,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     });
 
     // Configuración de columnas para cada tabla
-    const tableRules = {
-    };
+    const tableRules = {};
 
     // Función general para ocultar columnas
     function applyResponsiveTables() {
@@ -2238,6 +2429,84 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       abreviarNombresEnTabla("#pagosTable tr", 0);
       abreviarNombresEnTabla("#tabla-pendientes tr", 1);
     }, 1000);
+
+    // Función para marcar cliente como ganador de rifa
+    async function marcarGanadorRifa(prestamoId) {
+      const result = await Swal.fire({
+        title: '¿Marcar como ganador de rifa?',
+        html: `
+            <div style="text-align: left; padding: 10px;">
+                <p><strong>⚠️ Esta acción:</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li>Cancelará completamente el préstamo</li>
+                    <li>Establecerá el saldo en $0</li>
+                    <li>Marcará al cliente como ganador</li>
+                    <li><strong>NO se puede deshacer</strong></li>
+                </ul>
+                <br>
+                <label style="display: block; margin-bottom: 5px;">
+                    <strong>Observaciones (opcional):</strong>
+                </label>
+                <textarea id="observacionRifa" class="swal2-input" 
+                          style="width: 100%; height: 80px; resize: vertical;"
+                          placeholder="Ej: Ganó en sorteo del día 27/11/2025"></textarea>
+            </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: '<i class="fas fa-trophy"></i> Sí, marcarlo como ganador',
+        cancelButtonText: 'Cancelar',
+        preConfirm: () => {
+          return document.getElementById('observacionRifa').value;
+        }
+      });
+
+      if (result.isConfirmed) {
+        try {
+          const formData = new FormData();
+          formData.append('prestamo_id', prestamoId);
+          formData.append('observacion', result.value || 'Cliente ganador de rifa');
+
+          const response = await fetch('/php/marcar_ganador_rifa.php', {
+            method: 'POST',
+            body: formData
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            await Swal.fire({
+              icon: 'success',
+              title: '¡Ganador Registrado!',
+              html: `
+                        <div style="text-align: center; padding: 20px;">
+                            <i class="fas fa-trophy" style="font-size: 48px; color: #f59e0b; margin-bottom: 15px;"></i>
+                            <p style="font-size: 18px; margin: 10px 0;">
+                                El cliente ha sido marcado como <strong>ganador de la rifa</strong>
+                            </p>
+                            <p style="color: #10b981; font-weight: 600;">
+                                ✓ Préstamo cancelado completamente
+                            </p>
+                        </div>
+                    `,
+              confirmButtonColor: '#667eea'
+            });
+
+            // Recargar datos
+            closeModal('modalDetallePrestamo');
+            cargarPrestamos();
+            cargarEstadisticas();
+          } else {
+            Swal.fire('Error', data.message, 'error');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          Swal.fire('Error', 'No se pudo procesar la solicitud', 'error');
+        }
+      }
+    }
   </script>
 </body>
 

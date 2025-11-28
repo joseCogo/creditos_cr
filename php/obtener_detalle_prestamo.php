@@ -57,11 +57,34 @@ try {
         $pagos[] = $pago;
     }
 
-    echo json_encode([
+    // Obtener información de la boleta
+    $sql_boleta = "SELECT valor_boleta, boleta_descontada, fecha_descuento, 
+                          gano_rifa, fecha_rifa, observacion_rifa 
+                   FROM boletas_prestamos 
+                   WHERE prestamo_id = ?";
+    $stmt_boleta = mysqli_prepare($conexion, $sql_boleta);
+    mysqli_stmt_bind_param($stmt_boleta, "i", $prestamo_id);
+    mysqli_stmt_execute($stmt_boleta);
+    $result_boleta = mysqli_stmt_get_result($stmt_boleta);
+    $boleta = mysqli_fetch_assoc($result_boleta);
+
+    // Construir respuesta única con toda la información
+    $response = [
         'success' => true,
         'prestamo' => $prestamo,
-        'pagos' => $pagos
-    ]);
+        'pagos' => $pagos,
+        'boleta' => $boleta ? [
+            'valor_boleta' => floatval($boleta['valor_boleta']),
+            'boleta_descontada' => (bool)$boleta['boleta_descontada'],
+            'fecha_descuento' => $boleta['fecha_descuento'],
+            'gano_rifa' => (bool)$boleta['gano_rifa'],
+            'fecha_rifa' => $boleta['fecha_rifa'],
+            'observacion_rifa' => $boleta['observacion_rifa']
+        ] : null
+    ];
+
+    // Enviar respuesta UNA SOLA VEZ
+    echo json_encode($response);
 
 } catch (Exception $e) {
     echo json_encode([
