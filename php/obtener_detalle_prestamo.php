@@ -57,8 +57,8 @@ try {
         $pagos[] = $pago;
     }
 
-    // Obtener información de la boleta
-    $sql_boleta = "SELECT valor_boleta, boleta_descontada, fecha_descuento, 
+    // Obtener información de la boleta (incluye numero_boleta)
+    $sql_boleta = "SELECT valor_boleta, numero_boleta, boleta_descontada, fecha_descuento, 
                           gano_rifa, fecha_rifa, observacion_rifa 
                    FROM boletas_prestamos 
                    WHERE prestamo_id = ?";
@@ -75,6 +75,7 @@ try {
         'pagos' => $pagos,
         'boleta' => $boleta ? [
             'valor_boleta' => floatval($boleta['valor_boleta']),
+            'numero_boleta' => $boleta['numero_boleta'], // NUEVO
             'boleta_descontada' => (bool)$boleta['boleta_descontada'],
             'fecha_descuento' => $boleta['fecha_descuento'],
             'gano_rifa' => (bool)$boleta['gano_rifa'],

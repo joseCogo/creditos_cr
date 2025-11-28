@@ -766,6 +766,41 @@ tbody tr:hover {
   color: #667eea;
 }
 
+/* Modal base */
+.modal {
+  z-index: 1000;
+}
+
+/* Modal de detalle de préstamo */
+#modalDetallePrestamo {
+  z-index: 1000;
+}
+
+/* SweetAlert debe estar por encima de todos los modales */
+.swal2-container {
+  z-index: 2000 !important;
+}
+
+/* Backdrop de SweetAlert */
+.swal2-container.swal2-backdrop-show {
+  z-index: 2000 !important;
+}
+
+/* Popup de SweetAlert */
+.swal2-popup {
+  z-index: 2001 !important;
+}
+
+/* Asegurar que los modales normales no interfieran */
+.modal.active {
+  z-index: 1000;
+}
+
+/* Cuando hay múltiples modales, el último debe estar más arriba */
+.modal.active:last-of-type {
+  z-index: 1001;
+}
+
 /* ================================
    HEADER RESPONSIVE OPTIMIZADO
    ================================ */

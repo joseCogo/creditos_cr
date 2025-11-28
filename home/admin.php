@@ -476,7 +476,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     </div>
   </div>
 
-  <!-- Modal Préstamo - REEMPLAZAR COMPLETO en admin.php -->
+  <!-- Modal Préstamo -->
   <div class="modal" id="modalPrestamo">
     <div class="modal-content">
       <div class="modal-header">
@@ -556,6 +556,19 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           <input type="date" name="fecha_inicio" id="fecha_inicio" required>
         </div>
 
+        <!-- NUEVO: Número de boleta -->
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label for="numero_boleta">
+            <i class="fas fa-ticket-alt"></i> Número de Boleta/Rifa *
+          </label>
+          <input type="text" name="numero_boleta" id="numero_boleta" required
+            placeholder="Ej: 1234, A-567, etc."
+            style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 5px;">
+          <small style="color: #6b7280; display: block; margin-top: 5px;">
+            <i class="fas fa-info-circle"></i> Ingrese el número de la boleta que se entregará al cliente
+          </small>
+        </div>
+
         <!-- RESUMEN DEL PRÉSTAMO CON BOLETAS -->
         <div class="form-group" style="grid-column: 1 / -1; background: #f0f9ff; padding: 15px; border-radius: 8px;">
           <h4 style="margin: 0 0 15px 0; color: #667eea; font-size: 16px;">
@@ -579,10 +592,10 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
             </div>
           </div>
 
-          <!-- Información de la boleta/rifa -->
+          <!-- Información de la primera cuota -->
           <div style="margin-top: 15px; padding: 15px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
             <h4 style="margin: 0 0 10px 0; color: #f59e0b; font-size: 14px;">
-              <i class="fas fa-ticket-alt"></i> Sistema de Boletas (Rifa)
+              <i class="fas fa-ticket-alt"></i> Primera Cuota (Automática)
             </h4>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
               <div>
@@ -590,12 +603,16 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
                 <div style="font-size: 18px; font-weight: 700; color: #f59e0b;" id="valorBoleta">$0</div>
               </div>
               <div>
-                <div style="font-size: 12px; color: #78350f;">Primera Cuota (con descuento)</div>
-                <div style="font-size: 18px; font-weight: 700; color: #10b981;" id="primeraCuota">$0</div>
+                <div style="font-size: 12px; color: #78350f;">Primera Cuota Total</div>
+                <div style="font-size: 18px; font-weight: 700; color: #ef4444;" id="primeraCuota">$0</div>
+              </div>
+              <div>
+                <div style="font-size: 12px; color: #78350f;">Monto a Entregar</div>
+                <div style="font-size: 18px; font-weight: 700; color: #10b981;" id="montoEntregado">$0</div>
               </div>
             </div>
             <small style="display: block; margin-top: 8px; color: #78350f; font-style: italic;">
-              <i class="fas fa-info-circle"></i> El valor de la boleta se descuenta de la primera cuota únicamente
+              <i class="fas fa-info-circle"></i> Al registrar el préstamo, se descontará automáticamente el valor de la boleta + la primera cuota diaria
             </small>
           </div>
         </div>
@@ -1349,10 +1366,10 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         const pagos = data.pagos || [];
         const boleta = data.boleta || null;
 
-        // Calcular primera cuota si hay boleta
+        // Calcular valores
         const valorBoleta = boleta ? parseFloat(boleta.valor_boleta) : 0;
         const cuotaDiaria = parseFloat(prestamo.cuota_diaria);
-        const primeraCuota = cuotaDiaria - valorBoleta;
+        const primeraCuota = cuotaDiaria + valorBoleta;
 
         // Botón de marcar ganador (solo si está activo y no ha ganado)
         let botonGanador = '';
@@ -1387,7 +1404,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
             `;
         }
 
-        // Información de la boleta
+        // Información de la boleta (ahora incluye número)
         let infoBoleta = '';
         if (boleta && valorBoleta > 0) {
           infoBoleta = `
@@ -1395,8 +1412,9 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
                     <h5 style="margin: 0 0 8px 0; color: #f59e0b;">
                         <i class="fas fa-ticket-alt"></i> Información de Boleta
                     </h5>
+                    <p style="margin: 3px 0;"><strong>Número de Boleta:</strong> ${boleta.numero_boleta || 'No registrado'}</p>
                     <p style="margin: 3px 0;"><strong>Valor Boleta:</strong> ${formatMoney(valorBoleta)}</p>
-                    <p style="margin: 3px 0;"><strong>Primera Cuota:</strong> ${formatMoney(primeraCuota)}</p>
+                    <p style="margin: 3px 0;"><strong>Primera Cuota Total:</strong> ${formatMoney(primeraCuota)}</p>
                     <p style="margin: 3px 0;">
                         <strong>Estado:</strong> 
                         ${boleta.boleta_descontada ? 
@@ -1412,15 +1430,16 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         if (pagos.length > 0) {
           htmlPagos = '<h4 style="margin-top: 20px;">Historial de Pagos:</h4><div style="max-height: 300px; overflow-y: auto;">';
           pagos.forEach((pago, index) => {
-            const esPrimerPago = (index === 0);
+            const esPrimerPago = (index === pagos.length - 1); // El último en el array es el primero cronológicamente
             const bgColor = esPrimerPago ? '#fef3c7' : '#f3f4f6';
             htmlPagos += `
                     <div style="border: 1px solid #e5e7eb; padding: 10px; margin: 5px 0; border-radius: 5px; background: ${bgColor};">
-                        ${esPrimerPago && valorBoleta > 0 ? '<p style="margin: 0 0 5px 0; color: #f59e0b; font-weight: 600;"><i class="fas fa-ticket-alt"></i> PRIMERA CUOTA (Con descuento de boleta)</p>' : ''}
+                        ${esPrimerPago && valorBoleta > 0 ? '<p style="margin: 0 0 5px 0; color: #f59e0b; font-weight: 600;"><i class="fas fa-ticket-alt"></i> PRIMERA CUOTA (Boleta + Cuota)</p>' : ''}
                         <p style="margin: 3px 0;"><strong>Fecha:</strong> ${pago.fecha_pago}</p>
                         <p style="margin: 3px 0;"><strong>Monto:</strong> ${formatMoney(pago.monto_pagado)}</p>
                         <p style="margin: 3px 0;"><strong>Método:</strong> ${pago.metodo_pago}</p>
                         ${pago.observacion ? `<p style="margin: 3px 0;"><strong>Observación:</strong> ${pago.observacion}</p>` : ''}
+                        ${esPrimerPago ? `<p style="margin: 5px 0; font-size: 12px; color: #78350f;"><i class="fas fa-info-circle"></i> Incluye: Boleta ${formatMoney(valorBoleta)} + Cuota ${formatMoney(cuotaDiaria)}</p>` : ''}
                     </div>
                 `;
           });
@@ -1639,17 +1658,21 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       // Calcular cuota diaria normal
       const cuotaDiaria = cuotas > 0 ? montoConInteres / cuotas : 0;
 
-      // Calcular primera cuota (cuota diaria - valor boleta)
-      const primeraCuota = cuotaDiaria - valorBoleta;
+      // Calcular primera cuota (boleta + cuota diaria)
+      const primeraCuota = valorBoleta + cuotaDiaria;
+
+      // Calcular monto que realmente se entrega al cliente
+      const montoEntregado = monto - primeraCuota;
 
       // Actualizar displays
       document.getElementById('montoTotal').textContent = formatMoney(montoConInteres);
       document.getElementById('cuotaDiaria').textContent = formatMoney(cuotaDiaria);
       document.getElementById('cuota_diaria').value = cuotaDiaria.toFixed(2);
 
-      // Mostrar información de la boleta
+      // Mostrar información de la primera cuota
       document.getElementById('valorBoleta').textContent = formatMoney(valorBoleta);
       document.getElementById('primeraCuota').textContent = formatMoney(primeraCuota);
+      document.getElementById('montoEntregado').textContent = formatMoney(montoEntregado);
 
       // Guardar valor de boleta en campo oculto
       document.getElementById('valor_boleta').value = valorBoleta.toFixed(2);
@@ -1714,6 +1737,13 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       e.preventDefault();
       const formData = new FormData(this);
 
+      // Validar que se haya ingresado número de boleta
+      const numeroBoleta = formData.get('numero_boleta');
+      if (!numeroBoleta || numeroBoleta.trim() === '') {
+        Swal.fire('Error', 'Debe ingresar el número de boleta', 'error');
+        return;
+      }
+
       try {
         const response = await fetch('/php/registrar_prestamo.php', {
           method: 'POST',
@@ -1722,7 +1752,33 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         const data = await response.json();
 
         if (data.success) {
-          Swal.fire('Éxito', data.message, 'success');
+          // Mostrar mensaje detallado de éxito
+          await Swal.fire({
+            icon: 'success',
+            title: '¡Préstamo Registrado!',
+            html: `
+                    <div style="text-align: left; padding: 10px;">
+                        <p><strong>Préstamo ID:</strong> #${data.prestamo_id}</p>
+                        <p><strong>Número de Boleta:</strong> ${data.numero_boleta}</p>
+                        <hr style="margin: 10px 0;">
+                        <p><strong>Monto del Préstamo:</strong> ${formatMoney(parseFloat(formData.get('monto')))}</p>
+                        <p><strong>Primera Cuota (Automática):</strong> ${formatMoney(data.primer_pago)}</p>
+                        <p style="color: #10b981; font-weight: 600;">
+                            <strong>Monto Entregado al Cliente:</strong> ${formatMoney(data.monto_entregado)}
+                        </p>
+                        <p style="color: #ef4444; font-weight: 600;">
+                            <strong>Saldo Pendiente:</strong> ${formatMoney(data.saldo_inicial)}
+                        </p>
+                        <hr style="margin: 10px 0;">
+                        <p style="font-size: 12px; color: #6b7280;">
+                            <i class="fas fa-info-circle"></i> Se ha registrado automáticamente el primer pago por concepto de boleta + cuota diaria
+                        </p>
+                    </div>
+                `,
+            confirmButtonColor: '#667eea',
+            width: '600px'
+          });
+
           closeModal('modalPrestamo');
           cargarPrestamos();
           cargarEstadisticas();
@@ -2048,33 +2104,33 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     }
 
     function mostrarInfoPrestamo(prestamoId) {
-    const infoDiv = document.getElementById('infoPrestamo');
-    const select = document.getElementById('prestamo_pago');
-    const selectedOption = select.options[select.selectedIndex];
+      const infoDiv = document.getElementById('infoPrestamo');
+      const select = document.getElementById('prestamo_pago');
+      const selectedOption = select.options[select.selectedIndex];
 
-    if (!prestamoId || prestamoId === '') {
+      if (!prestamoId || prestamoId === '') {
         infoDiv.style.display = 'none';
         document.getElementById('monto_pagado').value = '';
         return;
+      }
+
+      // Obtener datos del option seleccionado
+      const cuota = selectedOption.getAttribute('data-cuota');
+      const saldo = selectedOption.getAttribute('data-saldo');
+      const cliente = selectedOption.getAttribute('data-cliente');
+      const cedula = selectedOption.getAttribute('data-cedula');
+
+      // Mostrar información - CORREGIDO: usar 'infoPagoCliente' en lugar de 'infoCliente'
+      document.getElementById('infoPagoCliente').textContent = `${cliente} (${cedula})`;
+      document.getElementById('infoCuota').textContent = formatMoney(parseFloat(cuota));
+      document.getElementById('infoSaldo').textContent = formatMoney(parseFloat(saldo));
+
+      // Auto-llenar monto con la cuota diaria
+      document.getElementById('monto_pagado').value = cuota;
+
+      // Mostrar el div de información
+      infoDiv.style.display = 'block';
     }
-
-    // Obtener datos del option seleccionado
-    const cuota = selectedOption.getAttribute('data-cuota');
-    const saldo = selectedOption.getAttribute('data-saldo');
-    const cliente = selectedOption.getAttribute('data-cliente');
-    const cedula = selectedOption.getAttribute('data-cedula');
-
-    // Mostrar información - CORREGIDO: usar 'infoPagoCliente' en lugar de 'infoCliente'
-    document.getElementById('infoPagoCliente').textContent = `${cliente} (${cedula})`;
-    document.getElementById('infoCuota').textContent = formatMoney(parseFloat(cuota));
-    document.getElementById('infoSaldo').textContent = formatMoney(parseFloat(saldo));
-
-    // Auto-llenar monto con la cuota diaria
-    document.getElementById('monto_pagado').value = cuota;
-
-    // Mostrar el div de información
-    infoDiv.style.display = 'block';
-}
 
     // Limpiar al cerrar modal
     function closeModal(modalId) {
