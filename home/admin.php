@@ -1352,6 +1352,8 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       }
     }
 
+    // Reemplazar la función verDetallePrestamo en admin.php
+
     async function verDetallePrestamo(prestamoId) {
       try {
         const response = await fetch(`/php/obtener_detalle_prestamo.php?id=${prestamoId}`);
@@ -1370,6 +1372,46 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         const valorBoleta = boleta ? parseFloat(boleta.valor_boleta) : 0;
         const cuotaDiaria = parseFloat(prestamo.cuota_diaria);
         const primeraCuota = cuotaDiaria + valorBoleta;
+
+        // NUEVO: Calcular ganancia
+        const montoPrestado = parseFloat(prestamo.monto);
+        const montoTotal = parseFloat(prestamo.monto_total);
+        const gananciaTotal = montoTotal - montoPrestado;
+        const porcentajeGanancia = montoPrestado > 0 ? ((gananciaTotal / montoPrestado) * 100) : 0;
+
+        // NUEVO: Información financiera del préstamo
+        const infoFinanciera = `
+            <div style="margin-top: 15px; padding: 15px; background: #ecfdf5; border-radius: 8px; border-left: 4px solid #10b981;">
+                <h4 style="margin: 0 0 10px 0; color: #10b981;">
+                    <i class="fas fa-chart-line"></i> Información Financiera
+                </h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                    <div>
+                        <p style="margin: 3px 0; font-size: 12px; color: #065f46;">Monto Prestado:</p>
+                        <p style="margin: 3px 0; font-size: 18px; font-weight: 600; color: #047857;">
+                            ${formatMoney(montoPrestado)}
+                        </p>
+                    </div>
+                    <div>
+                        <p style="margin: 3px 0; font-size: 12px; color: #065f46;">Monto Total a Cobrar:</p>
+                        <p style="margin: 3px 0; font-size: 18px; font-weight: 600; color: #059669;">
+                            ${formatMoney(montoTotal)}
+                        </p>
+                    </div>
+                    <div style="background: #d1fae5; padding: 10px; border-radius: 5px;">
+                        <p style="margin: 3px 0; font-size: 12px; color: #065f46;">
+                            <i class="fas fa-hand-holding-usd"></i> Ganancia Total:
+                        </p>
+                        <p style="margin: 3px 0; font-size: 20px; font-weight: 700; color: #047857;">
+                            ${formatMoney(gananciaTotal)}
+                        </p>
+                        <p style="margin: 3px 0; font-size: 11px; color: #065f46;">
+                            (${porcentajeGanancia.toFixed(1)}% de ganancia)
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `;
 
         // Botón de marcar ganador (solo si está activo y no ha ganado)
         let botonGanador = '';
@@ -1430,16 +1472,16 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         if (pagos.length > 0) {
           htmlPagos = '<h4 style="margin-top: 20px;">Historial de Pagos:</h4><div style="max-height: 300px; overflow-y: auto;">';
           pagos.forEach((pago, index) => {
-            const esPrimerPago = (index === pagos.length - 1); // El último en el array es el primero cronológicamente
+            const esPrimerPago = (index === pagos.length - 1);
             const bgColor = esPrimerPago ? '#fef3c7' : '#f3f4f6';
             htmlPagos += `
                     <div style="border: 1px solid #e5e7eb; padding: 10px; margin: 5px 0; border-radius: 5px; background: ${bgColor};">
-                        ${esPrimerPago && valorBoleta > 0 ? '<p style="margin: 0 0 5px 0; color: #f59e0b; font-weight: 600;"><i class="fas fa-ticket-alt"></i> PRIMERA CUOTA (Boleta + Cuota)</p>' : ''}
+                        ${esPrimerPago && valorBoleta > 0 ? '<p style="margin: 0 0 5px 0; color: #f59e0b; font-weight: 600;"><i class="fas fa-ticket-alt"></i> PRIMERA CUOTA (Automática - Boleta + Cuota)</p>' : ''}
                         <p style="margin: 3px 0;"><strong>Fecha:</strong> ${pago.fecha_pago}</p>
                         <p style="margin: 3px 0;"><strong>Monto:</strong> ${formatMoney(pago.monto_pagado)}</p>
                         <p style="margin: 3px 0;"><strong>Método:</strong> ${pago.metodo_pago}</p>
                         ${pago.observacion ? `<p style="margin: 3px 0;"><strong>Observación:</strong> ${pago.observacion}</p>` : ''}
-                        ${esPrimerPago ? `<p style="margin: 5px 0; font-size: 12px; color: #78350f;"><i class="fas fa-info-circle"></i> Incluye: Boleta ${formatMoney(valorBoleta)} + Cuota ${formatMoney(cuotaDiaria)}</p>` : ''}
+                        ${esPrimerPago && valorBoleta > 0 ? `<p style="margin: 5px 0; font-size: 12px; color: #78350f;"><i class="fas fa-info-circle"></i> Incluye: Boleta ${formatMoney(valorBoleta)} + Cuota ${formatMoney(cuotaDiaria)}</p>` : ''}
                     </div>
                 `;
           });
@@ -1450,20 +1492,39 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
         document.getElementById('contenidoDetallePrestamo').innerHTML = `
             <div style="text-align: left;">
-                <h4>Información del Préstamo</h4>
-                <p><strong>ID:</strong> #${prestamo.id}</p>
-                <p><strong>Cliente:</strong> ${prestamo.cliente_nombre}</p>
-                <p><strong>Monto Inicial:</strong> ${formatMoney(prestamo.monto)}</p>
-                <p><strong>Interés:</strong> ${prestamo.interes}%</p>
-                <p><strong>Cuota Diaria:</strong> ${formatMoney(cuotaDiaria)}</p>
-                <p><strong>Fecha Inicio:</strong> ${prestamo.fecha_inicio}</p>
-                <p><strong>Fecha Fin:</strong> ${prestamo.fecha_fin}</p>
-                <p><strong>Saldo Pendiente:</strong> ${formatMoney(prestamo.saldo_pendiente)}</p>
-                <p><strong>Estado:</strong> <span class="badge badge-${
-                    prestamo.estado === 'activo' ? 'success' : 
-                    prestamo.estado === 'cancelado' ? 'danger' : 
-                    'secondary'
-                }">${prestamo.estado.toUpperCase()}</span></p>
+                <h4>Información del Préstamo #${prestamo.id}</h4>
+                
+                <!-- Información básica -->
+                <div style="background: #f9fafb; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                    <p style="margin: 3px 0;"><strong>Cliente:</strong> ${prestamo.cliente_nombre}</p>
+                    <p style="margin: 3px 0;"><strong>Cédula:</strong> ${prestamo.cedula}</p>
+                    <p style="margin: 3px 0;"><strong>Teléfono:</strong> ${prestamo.telefono}</p>
+                    <p style="margin: 3px 0;"><strong>Dirección:</strong> ${prestamo.direccion}</p>
+                </div>
+
+                <!-- Información financiera (NUEVO) -->
+                ${infoFinanciera}
+
+                <!-- Detalles del préstamo -->
+                <div style="margin-top: 15px; padding: 10px; background: #f9fafb; border-radius: 5px;">
+                    <p style="margin: 3px 0;"><strong>Cuota Diaria:</strong> ${formatMoney(cuotaDiaria)}</p>
+                    <p style="margin: 3px 0;"><strong>Número de Cuotas:</strong> ${prestamo.cuotas} días</p>
+                    <p style="margin: 3px 0;"><strong>Fecha Inicio:</strong> ${prestamo.fecha_inicio}</p>
+                    <p style="margin: 3px 0;"><strong>Fecha Fin:</strong> ${prestamo.fecha_fin}</p>
+                    <p style="margin: 3px 0;"><strong>Saldo Pendiente:</strong> 
+                        <span style="font-size: 18px; font-weight: 600; color: ${prestamo.saldo_pendiente > 0 ? '#ef4444' : '#10b981'};">
+                            ${formatMoney(prestamo.saldo_pendiente)}
+                        </span>
+                    </p>
+                    <p style="margin: 3px 0;"><strong>Estado:</strong> 
+                        <span class="badge badge-${
+                            prestamo.estado === 'activo' ? 'success' : 
+                            prestamo.estado === 'cancelado' ? 'danger' : 
+                            'secondary'
+                        }">${prestamo.estado.toUpperCase()}</span>
+                    </p>
+                </div>
+
                 ${infoBoleta}
                 ${infoGanador}
                 ${botonGanador}
