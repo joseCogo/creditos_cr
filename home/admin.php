@@ -1,5 +1,5 @@
 <?php
-include(__DIR__ . "/../php/verificar_sesion.php");
+include(__DIR__ . "//php/verificar_sesion.php");
 
 // Verificar que sea administrador
 if (!esAdmin()) {
@@ -19,7 +19,15 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
   <title>Créditos CR - Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- jsPDF para exportar a PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- SheetJS para exportar a Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link href="/css/admin.css" rel="stylesheet">
+
 </head>
 
 <body>
@@ -66,6 +74,12 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         </a>
       </li>
       <li class="menu-item">
+        <a class="menu-link" onclick="showSection('reportes-caja')">
+          <i class="fas fa-file-invoice-dollar"></i>
+          <span>Reportes de Caja</span>
+        </a>
+      </li>
+      <li class="menu-item">
         <a class="menu-link" onclick="showSection('usuarios')">
           <i class="fas fa-user-shield"></i>
           <span>Usuarios</span>
@@ -109,37 +123,73 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       <!-- Dashboard Section -->
       <section id="dashboard" class="section active">
         <div class="cards-grid">
+          <!-- CARD: Saldo Disponible -->
+          <div class="card saldo-card">
+            <div class="card-header-flex">
+              <div class="card-icon" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+                <i class="fas fa-wallet"></i>
+              </div>
+              <button class="btn-add-saldo" onclick="openModal('modalAgregarSaldo')" title="Agregar saldo">
+                <i class="fas fa-plus-circle"></i>
+              </button>
+            </div>
+            <div class="card-title">Saldo Disponible</div>
+            <div class="card-value" id="saldo-disponible">$0</div>
+            <div class="card-footer">
+              <i class="fas fa-hand-holding-usd" style="color: #667eea;"></i>
+              <span>Capital disponible</span>
+            </div>
+          </div>
+
+          <!-- CARD: Total Prestado -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-icon danger">
+                <i class="fas fa-hand-holding-usd"></i>
+              </div>
+            </div>
+            <div class="card-title">Total Prestado</div>
+            <div class="card-value" id="total-prestado">$0</div>
+            <div class="card-footer">
+              <i class="fas fa-arrow-up" style="color: var(--danger-color);"></i>
+              <span>Capital en préstamos</span>
+            </div>
+          </div>
+
+          <!-- CARD: Total Recuperado -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-icon warning">
+                <i class="fas fa-undo"></i>
+              </div>
+            </div>
+            <div class="card-title">Total Recuperado</div>
+            <div class="card-value" id="total-recuperado">$0</div>
+            <div class="card-footer">
+              <i class="fas fa-arrow-down" style="color: var(--warning-color);"></i>
+              <span>Capital recuperado</span>
+            </div>
+          </div>
+
+          <!-- CARD NUEVO: Ganancias -->
           <div class="card">
             <div class="card-header">
               <div class="card-icon success">
                 <i class="fas fa-dollar-sign"></i>
               </div>
             </div>
-            <div class="card-title">Total Prestado</div>
-            <div class="card-value" id="total-prestado">$0</div>
+            <div class="card-title">Ganancias Totales</div>
+            <div class="card-value" id="total-ganancias">$0</div>
             <div class="card-footer">
-              <i class="fas fa-arrow-up" style="color: var(--success-color);"></i>
-              <span>Monto total de préstamos</span>
+              <i class="fas fa-chart-line" style="color: var(--success-color);"></i>
+              <span>Total de pagos recibidos</span>
             </div>
           </div>
 
+          <!-- CARD: Clientes Activos -->
           <div class="card">
             <div class="card-header">
               <div class="card-icon info">
-                <i class="fas fa-chart-line"></i>
-              </div>
-            </div>
-            <div class="card-title">Total Recuperado</div>
-            <div class="card-value" id="total-recuperado">$0</div>
-            <div class="card-footer">
-              <i class="fas fa-arrow-up" style="color: var(--success-color);"></i>
-              <span>Pagos recibidos</span>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <div class="card-icon warning">
                 <i class="fas fa-user-check"></i>
               </div>
             </div>
@@ -151,6 +201,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
             </div>
           </div>
 
+          <!-- CARD: Clientes Morosos -->
           <div class="card">
             <div class="card-header">
               <div class="card-icon danger">
@@ -225,7 +276,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
             <table>
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th>Cedula</th>
                   <th>Cliente</th>
                   <th>Monto</th>
                   <th>Interés</th>
@@ -263,7 +314,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
               <thead>
                 <tr>
                   <th>Cliente</th>
-                  <th>Préstamo ID</th>
+                  <th>N° Boleta</th>
                   <th>Cuota Esperada</th>
                   <th>Monto Pagado</th>
                   <th>Método</th>
@@ -318,6 +369,101 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+        <br>
+
+        <!-- GRÁFICOS -->
+        <div class="charts-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px; margin-top: 30px;">
+
+          <!-- Gráfico 1: Capital Prestado vs Recuperado -->
+          <div class="chart-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+              <h3><i class="fas fa-chart-bar"></i> Capital Prestado vs Recuperado</h3>
+            </div>
+            <canvas id="graficoCapital" style="max-height: 300px;"></canvas>
+          </div>
+
+          <!-- Gráfico 2: Ingresos de los últimos 7 días -->
+          <div class="chart-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+              <h3><i class="fas fa-chart-line"></i> Ingresos Últimos 7 Días</h3>
+            </div>
+            <canvas id="graficoIngresos7dias" style="max-height: 300px;"></canvas>
+          </div>
+
+        </div>
+
+        <!-- Gráfico 3: Estado de Préstamos (ancho completo) -->
+        <div class="chart-container" style="margin-top: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3><i class="fas fa-chart-pie"></i> Estado de Préstamos</h3>
+          </div>
+          <canvas id="graficoEstadoPrestamos" style="max-height: 250px;"></canvas>
+        </div>
+      </section>
+
+
+      <!-- Sección Reportes de Caja -->
+      <section id="reportes-caja" class="section">
+        <div class="table-container">
+          <div class="table-header">
+            <h3><i class="fas fa-file-invoice-dollar"></i> Reportes de Movimientos de Caja</h3>
+            <div class="search-box">
+              <select class="search-input" id="tipoReporteCaja" onchange="cargarReporteCaja()">
+                <option value="diario">Reporte Diario</option>
+                <option value="semanal">Reporte Semanal</option>
+                <option value="mensual">Reporte Mensual</option>
+                <option value="personalizado">Personalizado</option>
+              </select>
+
+              <div id="fechasPersonalizadas" style="display: none; gap: 10px;">
+                <input type="date" class="search-input" id="fechaInicioCaja">
+                <input type="date" class="search-input" id="fechaFinCaja">
+              </div>
+
+              <button class="btn btn-primary" onclick="cargarReporteCaja()">
+                <i class="fas fa-sync"></i> Generar
+              </button>
+
+              <button class="btn btn-success" onclick="exportarReporteCajaPDF()">
+                <i class="fas fa-file-pdf"></i> PDF
+              </button>
+
+              <button class="btn" style="background: #10b981; color: white;" onclick="exportarReporteCajaExcel()">
+                <i class="fas fa-file-excel"></i> Excel
+              </button>
+            </div>
+          </div>
+
+          <!-- Resumen del Reporte -->
+          <div class="cards-grid" style="margin: 20px 0;">
+            <div class="card">
+              <div class="card-title">Saldo Inicial</div>
+              <div class="card-value" id="reporteSaldoInicial" style="color: #6b7280;">$0</div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Total Ingresos</div>
+              <div class="card-value" id="reporteTotalIngresos" style="color: #10b981;">$0</div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Total Egresos</div>
+              <div class="card-value" id="reporteTotalEgresos" style="color: #ef4444;">$0</div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Saldo Final</div>
+              <div class="card-value" id="reporteSaldoFinal" style="color: #667eea;">$0</div>
+            </div>
+          </div>
+
+          <!-- Tabla de Movimientos -->
+          <div id="contenedorReporteCaja">
+            <p style="text-align: center; padding: 40px; color: #6b7280;">
+              Selecciona un tipo de reporte y haz clic en "Generar"
+            </p>
           </div>
         </div>
       </section>
@@ -538,22 +684,31 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         <!-- Campos del préstamo -->
         <div class="form-group">
           <label for="monto">Monto del Préstamo *</label>
-          <input type="number" name="monto" id="monto" required min="0" placeholder="500000">
+          <input type="number" name="monto" id="monto" required min="0" placeholder="500000" onchange="calcularCuota()" oninput="calcularCuota()">
         </div>
 
         <div class="form-group">
           <label for="interes">Interés Total (%) *</label>
-          <input type="number" name="interes" id="interes" required value="20" min="0" max="100">
+          <input type="number" name="interes" id="interes" required value="20" min="0" max="100" onchange="calcularCuota()" oninput="calcularCuota()">
+        </div>
+
+        <div class="form-group">
+          <label for="periodicidad">Periodicidad de Pago *</label>
+          <select name="periodicidad" id="periodicidad" required onchange="calcularCuota()">
+            <option value="diario">Diario</option>
+            <option value="semanal">Semanal (cada 7 días)</option>
+            <option value="quincenal">Quincenal (cada 15 días)</option>
+          </select>
         </div>
 
         <div class="form-group">
           <label for="cuotas">Número de Cuotas (días) *</label>
-          <input type="number" name="cuotas" id="cuotas" required value="30" min="1">
+          <input type="number" name="cuotas" id="cuotas" required value="30" min="1" onchange="calcularCuota()" oninput="calcularCuota()">
         </div>
 
         <div class="form-group">
           <label for="fecha_inicio">Fecha de Inicio *</label>
-          <input type="date" name="fecha_inicio" id="fecha_inicio" required>
+          <input type="date" name="fecha_inicio" id="fecha_inicio" required onchange="calcularCuota()">
         </div>
 
         <!-- NUEVO: Número de boleta -->
@@ -585,7 +740,10 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
               <div style="font-size: 12px; color: #6b7280;">Cuota Diaria Normal</div>
               <div style="font-size: 20px; font-weight: 700; color: var(--success-color);" id="cuotaDiaria">$0</div>
             </div>
-
+            <div>
+              <div style="font-size: 12px; color: #6b7280;">Cuota Según Periodicidad</div>
+              <div style="font-size: 20px; font-weight: 700; color: var(--warning-color);" id="cuotaPeriodica">$0</div>
+            </div>
             <div>
               <div style="font-size: 12px; color: #6b7280;">Fecha de Vencimiento</div>
               <div style="font-size: 20px; font-weight: 700; color: var(--dark-color);" id="fechaVencimiento">--</div>
@@ -612,7 +770,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
               </div>
             </div>
             <small style="display: block; margin-top: 8px; color: #78350f; font-style: italic;">
-              <i class="fas fa-info-circle"></i> Al registrar el préstamo, se descontará automáticamente el valor de la boleta + la primera cuota diaria
+              <i class="fas fa-info-circle"></i> Al registrar el préstamo, se descontará automáticamente el valor de la primera cuota
             </small>
           </div>
         </div>
@@ -620,7 +778,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         <!-- Campos ocultos -->
         <input type="hidden" name="cuota_diaria" id="cuota_diaria">
         <input type="hidden" name="fecha_fin" id="fecha_fin">
-        <input type="hidden" name="valor_boleta" id="valor_boleta">
+        <!-- <input type="hidden" name="valor_boleta" id="valor_boleta"> -->
 
         <!-- Botones -->
         <div style="display: flex; gap: 10px; margin-top: 20px; grid-column: 1 / -1;">
@@ -646,6 +804,49 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       </div>
       <div id="contenidoDetallePrestamo" style="padding: 20px;">
         Cargando...
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Agregar Saldo -->
+  <div class="modal" id="modalAgregarSaldo">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fas fa-wallet"></i> Agregar Saldo a Caja</h3>
+        <button class="close-modal" onclick="closeModal('modalAgregarSaldo')">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <form class="form-grid" id="formAgregarSaldo">
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label for="montoSaldo">Monto a Agregar *</label>
+          <input type="number" name="monto" id="montoSaldo" required placeholder="1000000" min="1" step="0.01">
+        </div>
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label for="conceptoSaldo">Concepto</label>
+          <textarea name="concepto" id="conceptoSaldo" rows="3" placeholder="Ej: Capital inicial, Ingreso de efectivo, etc.">Ingreso de capital</textarea>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px; grid-column: 1 / -1;">
+          <button type="submit" class="btn btn-success" style="flex: 1;">
+            <i class="fas fa-check"></i> Agregar Saldo
+          </button>
+          <button type="button" class="btn btn-danger" onclick="closeModal('modalAgregarSaldo')" style="flex: 1;">
+            <i class="fas fa-times"></i> Cancelar
+          </button>
+        </div>
+      </form>
+
+      <!-- Últimos Movimientos -->
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h4 style="margin: 0;">Últimos Movimientos</h4>
+          <button class="btn btn-sm" style="background: #6b7280; color: white; padding: 5px 10px;" onclick="cargarMovimientosCaja()">
+            <i class="fas fa-sync"></i>
+          </button>
+        </div>
+        <div class="movimientos-container" id="movimientosContainer">
+          <p style="text-align: center; color: #6b7280; padding: 20px;">Cargando movimientos...</p>
+        </div>
       </div>
     </div>
   </div>
@@ -878,7 +1079,9 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         }
       });
     });
+  </script>
 
+  <script>
     function showSection(id) {
       document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
       const section = document.getElementById(id);
@@ -888,7 +1091,6 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
       document.querySelectorAll('.menu-link').forEach(link => link.classList.remove('active'));
 
-      // Buscar y activar el enlace del menú
       const menuLinks = document.querySelectorAll('.menu-link');
       menuLinks.forEach(link => {
         if (link.getAttribute('onclick') && link.getAttribute('onclick').includes(id)) {
@@ -903,6 +1105,12 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       if (id === 'usuarios') cargarUsuarios();
       if (id === 'dashboard') cargarEstadisticas();
       if (id === 'reportes') cargarReportes();
+      if (id === 'reportes-caja') {
+        // Inicializar fechas
+        const hoy = new Date().toISOString().split('T')[0];
+        document.getElementById('fechaInicioCaja').value = hoy;
+        document.getElementById('fechaFinCaja').value = hoy;
+      }
     }
 
     function openModal(modalId) {
@@ -929,20 +1137,705 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       }
     });
 
-    async function cargarEstadisticas() {
+
+    // FUNCIÓN PARA AGREGAR SALDO
+    document.getElementById('formAgregarSaldo').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+
+      try {
+        const response = await fetch('/php/agregar_saldo.php', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          Swal.fire({
+            icon: 'success',
+            title: '¡Saldo Agregado!',
+            html: `
+              <p>Nuevo saldo disponible:</p>
+              <h3 style="color: #10b981; font-size: 32px;">${formatMoney(data.nuevo_saldo)}</h3>
+            `,
+            confirmButtonColor: '#667eea'
+          });
+          closeModal('modalAgregarSaldo');
+          cargarEstadisticas();
+        } else {
+          Swal.fire('Error', data.message, 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'No se pudo agregar el saldo', 'error');
+      }
+    });
+
+    // FUNCIÓN PARA CARGAR MOVIMIENTOS DE CAJA
+    async function cargarMovimientosCaja() {
+      try {
+        const response = await fetch('/php/obtener_movimientos_caja.php');
+        const movimientos = await response.json();
+
+        const container = document.getElementById('movimientosContainer');
+
+        if (!movimientos || movimientos.length === 0) {
+          container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 20px;">No hay movimientos registrados</p>';
+          return;
+        }
+
+        container.innerHTML = movimientos.map(m => `
+          <div class="movimiento-item movimiento-${m.tipo}">
+            <div class="movimiento-info">
+              <div style="font-weight: 600; color: #1f2937;">${m.concepto}</div>
+              <div style="font-size: 12px; color: #6b7280; margin-top: 3px;">
+                ${m.fecha_movimiento} • ${m.usuario_nombre || 'Sistema'}
+              </div>
+              ${m.referencia ? `<div style="font-size: 11px; color: #9ca3af; margin-top: 2px;">${m.referencia}</div>` : ''}
+            </div>
+            <div class="movimiento-monto ${m.tipo}">
+              ${m.tipo === 'ingreso' ? '+' : '-'}${formatMoney(m.monto)}
+            </div>
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Error cargando movimientos:', error);
+        document.getElementById('movimientosContainer').innerHTML =
+          '<p style="text-align: center; color: red; padding: 20px;">Error al cargar movimientos</p>';
+      }
+    }
+
+    // Mostrar/ocultar campos de fecha personalizada
+    document.getElementById('tipoReporteCaja')?.addEventListener('change', function() {
+      const fechasDiv = document.getElementById('fechasPersonalizadas');
+      if (this.value === 'personalizado') {
+        fechasDiv.style.display = 'flex';
+      } else {
+        fechasDiv.style.display = 'none';
+      }
+    });
+  </script>
+
+  <script>
+    // Variable global para almacenar datos del último reporte
+
+
+    /// FUNCIÓN PARA EXPORTAR A PDF
+    async function exportarReporteCajaPDF() {
+      if (!ultimoReporteCaja) {
+        Swal.fire('Error', 'Primero genera un reporte', 'warning');
+        return;
+      }
+
+      try {
+        const {
+          jsPDF
+        } = window.jspdf;
+        const doc = new jsPDF();
+
+        const data = ultimoReporteCaja;
+
+        // Configuración de colores
+        const colorPrimario = [102, 126, 234];
+        const colorSecundario = [118, 75, 162];
+        const colorVerde = [16, 185, 129];
+        const colorRojo = [239, 68, 68];
+
+        // ENCABEZADO
+        doc.setFillColor(...colorPrimario);
+        doc.rect(0, 0, 210, 40, 'F');
+
+        // Logo o nombre de la empresa
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(24);
+        doc.setFont(undefined, 'bold');
+        doc.text('CRÉDITOS CR', 105, 15, {
+          align: 'center'
+        });
+
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'normal');
+        doc.text('Sistema de Gestión de Créditos', 105, 23, {
+          align: 'center'
+        });
+
+        doc.setFontSize(16);
+        doc.setFont(undefined, 'bold');
+        doc.text('REPORTE DE MOVIMIENTOS DE CAJA', 105, 33, {
+          align: 'center'
+        });
+
+        // INFORMACIÓN DEL REPORTE
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+
+        let yPos = 50;
+
+        doc.setFont(undefined, 'bold');
+        doc.text('Tipo de Reporte:', 20, yPos);
+        doc.setFont(undefined, 'normal');
+        doc.text(data.tipo_reporte.charAt(0).toUpperCase() + data.tipo_reporte.slice(1), 60, yPos);
+
+        yPos += 7;
+        doc.setFont(undefined, 'bold');
+        doc.text('Período:', 20, yPos);
+        doc.setFont(undefined, 'normal');
+        doc.text(`${data.fecha_inicio} al ${data.fecha_fin}`, 60, yPos);
+
+        yPos += 7;
+        doc.setFont(undefined, 'bold');
+        doc.text('Fecha de generación:', 20, yPos);
+        doc.setFont(undefined, 'normal');
+        doc.text(new Date().toLocaleString('es-CO'), 60, yPos);
+
+        yPos += 7;
+        doc.setFont(undefined, 'bold');
+        doc.text('Total de movimientos:', 20, yPos);
+        doc.setFont(undefined, 'normal');
+        doc.text(data.total_movimientos.toString(), 60, yPos);
+
+        // RESUMEN FINANCIERO
+        yPos += 12;
+        doc.setFillColor(240, 249, 255);
+        doc.rect(15, yPos - 5, 180, 40, 'F');
+
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(...colorPrimario);
+        doc.text('RESUMEN FINANCIERO', 105, yPos, {
+          align: 'center'
+        });
+
+        yPos += 10;
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+
+        // Saldo Inicial
+        doc.setFont(undefined, 'bold');
+        doc.text('Saldo Inicial:', 25, yPos);
+        doc.setFont(undefined, 'normal');
+        doc.text(formatMoney(data.saldo_inicial), 70, yPos);
+
+        // Total Ingresos
+        doc.setFont(undefined, 'bold');
+        doc.text('Total Ingresos:', 110, yPos);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(...colorVerde);
+        doc.text(formatMoney(data.total_ingresos), 155, yPos);
+
+        yPos += 7;
+        doc.setTextColor(0, 0, 0);
+
+        // Total Egresos
+        doc.setFont(undefined, 'bold');
+        doc.text('Total Egresos:', 25, yPos);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(...colorRojo);
+        doc.text(formatMoney(data.total_egresos), 70, yPos);
+
+        // Saldo Final
+        doc.setTextColor(0, 0, 0);
+        doc.setFont(undefined, 'bold');
+        doc.text('Saldo Final:', 110, yPos);
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(...colorPrimario);
+        doc.text(formatMoney(data.saldo_final), 155, yPos);
+
+        yPos += 7;
+        doc.setTextColor(0, 0, 0);
+
+        // Balance
+        const balanceColor = data.balance >= 0 ? colorVerde : colorRojo;
+        doc.setFont(undefined, 'bold');
+        doc.text('Balance del Período:', 25, yPos);
+        doc.setTextColor(...balanceColor);
+        doc.text(formatMoney(data.balance), 70, yPos);
+
+        // TABLA DE MOVIMIENTOS
+        yPos += 15;
+        doc.setTextColor(0, 0, 0);
+
+        // Preparar datos para la tabla
+        const tableData = [];
+
+        data.movimientos_por_fecha.forEach(grupo => {
+          // Agregar encabezado de fecha
+          tableData.push([{
+            content: `📅 ${grupo.fecha} - Ingresos: ${formatMoney(grupo.ingresos)} | Egresos: ${formatMoney(grupo.egresos)}`,
+            colSpan: 5,
+            styles: {
+              fillColor: [102, 126, 234],
+              textColor: [255, 255, 255],
+              fontStyle: 'bold',
+              halign: 'center'
+            }
+          }]);
+
+          // Agregar movimientos del día
+          grupo.movimientos.forEach(mov => {
+            const fecha = new Date(mov.fecha_movimiento);
+            const hora = fecha.toLocaleTimeString('es-CO', {
+              hour: '2-digit',
+              minute: '2-digit',
+              timeZone: 'America/Bogota'
+            });
+
+            const signo = mov.tipo === 'ingreso' ? '+' : '-';
+            const montoFormateado = signo + formatMoney(mov.monto);
+
+            tableData.push([
+              hora,
+              mov.tipo.toUpperCase(),
+              mov.concepto,
+              mov.referencia || '-',
+              {
+                content: montoFormateado,
+                styles: {
+                  textColor: mov.tipo === 'ingreso' ? [16, 185, 129] : [239, 68, 68],
+                  fontStyle: 'bold',
+                  halign: 'right'
+                }
+              }
+            ]);
+          });
+        });
+
+        doc.autoTable({
+          startY: yPos,
+          head: [
+            ['Hora', 'Tipo', 'Concepto', 'Referencia', 'Monto']
+          ],
+          body: tableData,
+          theme: 'grid',
+          headStyles: {
+            fillColor: [118, 75, 162],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            halign: 'center'
+          },
+          styles: {
+            fontSize: 8,
+            cellPadding: 3
+          },
+          columnStyles: {
+            0: {
+              cellWidth: 20,
+              halign: 'center'
+            },
+            1: {
+              cellWidth: 25,
+              halign: 'center'
+            },
+            2: {
+              cellWidth: 70
+            },
+            3: {
+              cellWidth: 35,
+              halign: 'center'
+            },
+            4: {
+              cellWidth: 35,
+              halign: 'right'
+            }
+          },
+          margin: {
+            left: 15,
+            right: 15
+          }
+        });
+
+        // PIE DE PÁGINA
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.setTextColor(128, 128, 128);
+          doc.text(
+            `Página ${i} de ${pageCount}`,
+            105,
+            doc.internal.pageSize.height - 10, {
+              align: 'center'
+            }
+          );
+          doc.text(
+            'Créditos CR - Sistema de Gestión',
+            105,
+            doc.internal.pageSize.height - 5, {
+              align: 'center'
+            }
+          );
+        }
+
+        // Guardar PDF
+        const nombreArchivo = `Reporte_Caja_${data.tipo_reporte}_${data.fecha_inicio}_${data.fecha_fin}.pdf`;
+        doc.save(nombreArchivo);
+
+        Swal.fire({
+          icon: 'success',
+          title: '¡PDF Generado!',
+          text: `Se ha descargado: ${nombreArchivo}`,
+          confirmButtonColor: '#667eea'
+        });
+
+      } catch (error) {
+        console.error('Error generando PDF:', error);
+        Swal.fire('Error', 'No se pudo generar el PDF: ' + error.message, 'error');
+      }
+    }
+
+    // FUNCIÓN PARA EXPORTAR A EXCEL
+    async function exportarReporteCajaExcel() {
+      if (!ultimoReporteCaja) {
+        Swal.fire('Error', 'Primero genera un reporte', 'warning');
+        return;
+      }
+
+      try {
+        const data = ultimoReporteCaja;
+
+        // Crear un nuevo libro de Excel
+        const wb = XLSX.utils.book_new();
+
+        // HOJA 1: RESUMEN
+        const resumenData = [
+          ['CRÉDITOS CR'],
+          ['REPORTE DE MOVIMIENTOS DE CAJA'],
+          [],
+          ['Tipo de Reporte:', data.tipo_reporte.toUpperCase()],
+          ['Período:', `${data.fecha_inicio} al ${data.fecha_fin}`],
+          ['Fecha de Generación:', new Date().toLocaleString('es-CO')],
+          ['Total de Movimientos:', data.total_movimientos],
+          [],
+          ['RESUMEN FINANCIERO'],
+          ['Saldo Inicial:', data.saldo_inicial],
+          ['Total Ingresos:', data.total_ingresos],
+          ['Total Egresos:', data.total_egresos],
+          ['Saldo Final:', data.saldo_final],
+          ['Balance del Período:', data.balance]
+        ];
+
+        const wsResumen = XLSX.utils.aoa_to_sheet(resumenData);
+        wsResumen['!cols'] = [{
+          wch: 25
+        }, {
+          wch: 20
+        }];
+        XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+
+        // HOJA 2: MOVIMIENTOS DETALLADOS
+        const movimientosData = [
+          ['Fecha', 'Hora', 'Tipo', 'Concepto', 'Referencia', 'Usuario', 'Monto']
+        ];
+
+        data.movimientos.forEach(mov => {
+          const fecha = new Date(mov.fecha_movimiento);
+          const fechaStr = fecha.toLocaleDateString('es-CO');
+          const horaStr = fecha.toLocaleTimeString('es-CO', {
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'America/Bogota'
+          });
+
+          movimientosData.push([
+            fechaStr,
+            horaStr,
+            mov.tipo.toUpperCase(),
+            mov.concepto,
+            mov.referencia || '-',
+            mov.usuario_nombre || 'Sistema',
+            parseFloat(mov.monto)
+          ]);
+        });
+
+        const wsMovimientos = XLSX.utils.aoa_to_sheet(movimientosData);
+        wsMovimientos['!cols'] = [{
+            wch: 12
+          }, {
+            wch: 10
+          }, {
+            wch: 12
+          },
+          {
+            wch: 40
+          }, {
+            wch: 20
+          }, {
+            wch: 20
+          }, {
+            wch: 15
+          }
+        ];
+        XLSX.utils.book_append_sheet(wb, wsMovimientos, 'Movimientos Detallados');
+
+        // HOJA 3: RESUMEN POR FECHA
+        const porFechaData = [
+          ['Fecha', 'Total Ingresos', 'Total Egresos', 'Balance', 'Cantidad de Movimientos']
+        ];
+
+        data.movimientos_por_fecha.forEach(grupo => {
+          const balance = grupo.ingresos - grupo.egresos;
+          porFechaData.push([
+            grupo.fecha,
+            parseFloat(grupo.ingresos),
+            parseFloat(grupo.egresos),
+            balance,
+            grupo.movimientos.length
+          ]);
+        });
+
+        porFechaData.push([]);
+        porFechaData.push([
+          'TOTALES',
+          parseFloat(data.total_ingresos),
+          parseFloat(data.total_egresos),
+          parseFloat(data.balance),
+          data.total_movimientos
+        ]);
+
+        const wsPorFecha = XLSX.utils.aoa_to_sheet(porFechaData);
+        wsPorFecha['!cols'] = [{
+          wch: 12
+        }, {
+          wch: 18
+        }, {
+          wch: 18
+        }, {
+          wch: 18
+        }, {
+          wch: 25
+        }];
+        XLSX.utils.book_append_sheet(wb, wsPorFecha, 'Resumen por Fecha');
+
+        // Generar y descargar
+        const nombreArchivo = `Reporte_Caja_${data.tipo_reporte}_${data.fecha_inicio}_${data.fecha_fin}.xlsx`;
+        XLSX.writeFile(wb, nombreArchivo);
+
+        Swal.fire({
+          icon: 'success',
+          title: '¡Excel Generado!',
+          html: `
+        <p>Se ha descargado: <strong>${nombreArchivo}</strong></p>
+        <p style="margin-top: 10px; font-size: 14px; color: #6b7280;">
+          El archivo contiene 3 hojas:<br>
+          📊 Resumen<br>
+          📋 Movimientos Detallados<br>
+          📅 Resumen por Fecha
+        </p>
+      `,
+          confirmButtonColor: '#667eea'
+        });
+
+      } catch (error) {
+        console.error('Error generando Excel:', error);
+        Swal.fire('Error', 'No se pudo generar el archivo Excel: ' + error.message, 'error');
+      }
+    }
+
+    // Variables globales para los gráficos
+    let graficoCapital = null;
+    let graficoIngresos = null;
+    let graficoEstado = null;
+
+    // FUNCIÓN PARA CREAR GRÁFICO CAPITAL PRESTADO VS RECUPERADO
+    async function crearGraficoCapital() {
+      const ctx = document.getElementById('graficoCapital');
+      if (!ctx) return;
+
       try {
         const response = await fetch('/php/obtener_estadisticas.php');
         const data = await response.json();
 
-        document.getElementById('total-prestado').textContent = formatMoney(data.total_prestado);
-        document.getElementById('total-recuperado').textContent = formatMoney(data.total_recuperado);
-        document.getElementById('clientes-activos').textContent = data.clientes_activos;
-        document.getElementById('clientes-morosos').textContent = data.clientes_morosos;
+        // Destruir gráfico anterior si existe
+        if (graficoCapital) {
+          graficoCapital.destroy();
+        }
+
+        graficoCapital = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: ['Capital Prestado', 'Capital Recuperado', 'Saldo Disponible'],
+            datasets: [{
+              label: 'Monto ($)',
+              data: [
+                data.total_prestado || 0,
+                data.total_recuperado || 0,
+                data.saldo_disponible || 0
+              ],
+              backgroundColor: [
+                'rgba(239, 68, 68, 0.7)', // Rojo para prestado
+                'rgba(16, 185, 129, 0.7)', // Verde para recuperado
+                'rgba(102, 126, 234, 0.7)' // Azul para disponible
+              ],
+              borderColor: [
+                'rgba(239, 68, 68, 1)',
+                'rgba(16, 185, 129, 1)',
+                'rgba(102, 126, 234, 1)'
+              ],
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return formatMoney(context.parsed.y);
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function(value) {
+                    return '$' + (value / 1000000).toFixed(1) + 'M';
+                  }
+                }
+              }
+            }
+          }
+        });
       } catch (error) {
-        console.error('Error cargando estadísticas:', error);
+        console.error('Error creando gráfico de capital:', error);
       }
     }
 
+    // FUNCIÓN PARA CREAR GRÁFICO INGRESOS 7 DÍAS
+    async function crearGraficoIngresos7Dias() {
+      const ctx = document.getElementById('graficoIngresos7dias');
+      if (!ctx) return;
+
+      try {
+        const response = await fetch('/php/obtener_estadisticas.php');
+        const data = await response.json();
+        const pagos7dias = data.pagos_7dias || [];
+
+        if (graficoIngresos) {
+          graficoIngresos.destroy();
+        }
+
+        const fechas = pagos7dias.map(p => p.fecha);
+        const montos = pagos7dias.map(p => parseFloat(p.total));
+
+        graficoIngresos = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: fechas,
+            datasets: [{
+              label: 'Ingresos Diarios',
+              data: montos,
+              borderColor: 'rgba(16, 185, 129, 1)',
+              backgroundColor: 'rgba(16, 185, 129, 0.2)',
+              borderWidth: 3,
+              fill: true,
+              tension: 0.4,
+              pointRadius: 5,
+              pointBackgroundColor: 'rgba(16, 185, 129, 1)',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top'
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return 'Ingresos: ' + formatMoney(context.parsed.y);
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  callback: function(value) {
+                    return '$' + (value / 1000).toFixed(0) + 'K';
+                  }
+                }
+              }
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error creando gráfico de ingresos:', error);
+      }
+    }
+
+    // FUNCIÓN PARA CREAR GRÁFICO ESTADO DE PRÉSTAMOS
+    async function crearGraficoEstadoPrestamos() {
+      const ctx = document.getElementById('graficoEstadoPrestamos');
+      if (!ctx) return;
+
+      try {
+        const response = await fetch('/php/obtener_prestamos.php');
+        const prestamos = await response.json();
+
+        const activos = prestamos.filter(p => p.estado === 'activo').length;
+        const cancelados = prestamos.filter(p => p.estado === 'cancelado').length;
+        const total = prestamos.length;
+
+        if (graficoEstado) {
+          graficoEstado.destroy();
+        }
+
+        graficoEstado = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Activos', 'Cancelados'],
+            datasets: [{
+              data: [activos, cancelados],
+              backgroundColor: [
+                'rgba(102, 126, 234, 0.7)',
+                'rgba(16, 185, 129, 0.7)'
+              ],
+              borderColor: [
+                'rgba(102, 126, 234, 1)',
+                'rgba(16, 185, 129, 1)'
+              ],
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom'
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const label = context.label || '';
+                    const value = context.parsed || 0;
+                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                    return `${label}: ${value} (${percentage}%)`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error creando gráfico de estado:', error);
+      }
+    }
+  </script>
+
+  <script>
     async function cargarReportes() {
       try {
         const response = await fetch('/php/obtener_reportes.php');
@@ -1220,7 +2113,17 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         }
 
         const response = await fetch(url);
-        prestamosData = await response.json();
+        const txt = await response.text();
+        console.log("RESPUESTA BRUTA:", txt);
+
+        prestamosData = JSON.parse(txt);
+
+        // 🔥 Solución: garantiza que sea un array
+        if (!Array.isArray(prestamosData)) {
+          console.error("La respuesta no es un array:", prestamosData);
+          prestamosData = [];
+        }
+
         prestamosPaginaActual = 1;
 
         renderizarPrestamos();
@@ -1228,6 +2131,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         console.error('Error cargando préstamos:', error);
       }
     }
+
 
     function renderizarPrestamos() {
       const tbody = document.getElementById('prestamosTable');
@@ -1256,29 +2160,23 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       const fin = inicio + prestamosPorPagina;
       const prestamosPagina = prestamosFiltrados.slice(inicio, fin);
 
-      tbody.innerHTML = prestamosPagina.map(p => `
-    <tr>
-      <td>#${p.id}</td>
-      <td>${p.cliente_nombre}</td>
-      <td>${formatMoney(p.monto)}</td>
-      <td>${p.interes}%</td>
-      <td>${formatMoney(p.cuota_diaria)}</td>
-      <td>${p.fecha_inicio}</td>
-      <td>${formatMoney(p.saldo_pendiente)}</td>
-      <td>
-        <span class="badge badge-${
-          p.estado === 'activo' ? 'success' : 
-          p.estado === 'cancelado' ? 'danger' : 
-          'secondary'
-        }">${p.estado}</span>
-      </td>
-      <td>
-        <button class="btn btn-primary btn-sm" onclick="verDetallePrestamo(${p.id})" title="Ver detalles">
-          <i class="fas fa-eye"></i>
-        </button>
-      </td>
-    </tr>
-  `).join('');
+      tbody.innerHTML = prestamosData.map(p => `
+  <tr>
+    <td>${p.cliente_cedula}</td>
+    <td>${p.cliente_nombre}</td>
+    <td>${formatMoney(p.monto)}</td>
+    <td>${p.interes}%</td>
+    <td>${formatMoney(p.cuota_diaria)}</td>
+    <td>${p.fecha_inicio}</td>
+    <td>${formatMoney(p.saldo_pendiente)}</td>
+    <td><span class="badge badge-${p.estado === 'activo' ? 'success' : 'secondary'}">${p.estado}</span></td>
+    <td>
+      <button class="btn btn-primary btn-sm" onclick="verDetallePrestamo(${p.id})" title="Ver detalles">
+        <i class="fas fa-eye"></i>
+      </button>
+    </td>
+  </tr>
+`).join('');
 
       renderizarPaginacionPrestamos(totalPaginas, prestamosFiltrados.length);
     }
@@ -1703,47 +2601,57 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         cargarPrestamosSelect();
       }
     }
+  </script>
 
+  <script>
     function calcularCuota() {
-      const monto = parseFloat(document.getElementById('monto').value) || 0;
-      const interes = parseFloat(document.getElementById('interes').value) || 0;
-      const cuotas = parseInt(document.getElementById('cuotas').value) || 0;
-      const fechaInicio = document.getElementById('fecha_inicio').value;
+      const monto = parseFloat(document.getElementById('monto')?.value) || 0;
+      const interes = parseFloat(document.getElementById('interes')?.value) || 0;
+      const cuotas = parseInt(document.getElementById('cuotas')?.value) || 0;
+      const fechaInicio = document.getElementById('fecha_inicio')?.value;
+      const periodicidad = document.getElementById('periodicidad')?.value || 'diario';
 
-      // Calcular valor de la boleta según el monto
-      const valorBoleta = calcularValorBoleta(monto);
+      // Validar que haya valores
+      if (monto === 0 || cuotas === 0) {
+        return;
+      }
 
-      // Calcular monto total del préstamo (con interés)
-      const montoConInteres = monto + (monto * (interes / 100));
+      const montoTotal = monto + (monto * (interes / 100));
+      const cuotaDiaria = cuotas > 0 ? montoTotal / cuotas : 0;
 
-      // Calcular cuota diaria normal
-      const cuotaDiaria = cuotas > 0 ? montoConInteres / cuotas : 0;
+      // Calcular cuota según periodicidad
+      let cuotaPeriodica = 0;
+      switch (periodicidad) {
+        case 'diario':
+          cuotaPeriodica = cuotaDiaria;
+          break;
+        case 'semanal':
+          cuotaPeriodica = cuotaDiaria * 7;
+          break;
+        case 'quincenal':
+          cuotaPeriodica = cuotaDiaria * 15;
+          break;
+      }
 
-      // Calcular primera cuota (boleta + cuota diaria)
-      const primeraCuota = valorBoleta + cuotaDiaria;
-
-      // Calcular monto que realmente se entrega al cliente
-      const montoEntregado = monto - primeraCuota;
-
-      // Actualizar displays
-      document.getElementById('montoTotal').textContent = formatMoney(montoConInteres);
+      // Actualizar valores en pantalla
+      document.getElementById('montoTotal').textContent = formatMoney(montoTotal);
       document.getElementById('cuotaDiaria').textContent = formatMoney(cuotaDiaria);
+      document.getElementById('cuotaPeriodica').textContent = formatMoney(cuotaPeriodica);
+
+      // Guardar cuota diaria en campo oculto
       document.getElementById('cuota_diaria').value = cuotaDiaria.toFixed(2);
 
-      // Mostrar información de la primera cuota
-      document.getElementById('valorBoleta').textContent = formatMoney(valorBoleta);
-      document.getElementById('primeraCuota').textContent = formatMoney(primeraCuota);
-      document.getElementById('montoEntregado').textContent = formatMoney(montoEntregado);
-
-      // Guardar valor de boleta en campo oculto
-      document.getElementById('valor_boleta').value = valorBoleta.toFixed(2);
-
+      // Calcular y guardar fecha de vencimiento
       if (fechaInicio && cuotas > 0) {
-        const fecha = new Date(fechaInicio);
+        const fecha = new Date(fechaInicio + 'T00:00:00'); // Agregar hora para evitar problemas de zona horaria
         fecha.setDate(fecha.getDate() + cuotas);
         const vencimiento = fecha.toISOString().split('T')[0];
+
         document.getElementById('fechaVencimiento').textContent = vencimiento;
-        document.getElementById('fecha_fin').value = vencimiento;
+        document.getElementById('fecha_fin').value = vencimiento; // CRÍTICO: Guardar en campo oculto
+      } else {
+        document.getElementById('fechaVencimiento').textContent = '--';
+        document.getElementById('fecha_fin').value = ''; // Limpiar si no hay fecha
       }
     }
 
@@ -1796,13 +2704,27 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
     document.getElementById('formPrestamo').addEventListener('submit', async function(e) {
       e.preventDefault();
+
+      // Validar que los campos calculados tengan valores
+      const fecha_fin = document.getElementById('fecha_fin').value;
+      const cuota_diaria = document.getElementById('cuota_diaria').value;
+
+      if (!fecha_fin || !cuota_diaria || cuota_diaria === '0') {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Datos incompletos',
+          text: 'Por favor completa todos los campos y espera a que se calculen las cuotas',
+          confirmButtonColor: '#667eea'
+        });
+        return;
+      }
+
       const formData = new FormData(this);
 
-      // Validar que se haya ingresado número de boleta
-      const numeroBoleta = formData.get('numero_boleta');
-      if (!numeroBoleta || numeroBoleta.trim() === '') {
-        Swal.fire('Error', 'Debe ingresar el número de boleta', 'error');
-        return;
+      // Debug: Ver qué datos se están enviando
+      console.log('Datos del formulario:');
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
       }
 
       try {
@@ -1810,45 +2732,59 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           method: 'POST',
           body: formData
         });
-        const data = await response.json();
+
+        // Obtener el texto completo de la respuesta
+        const responseText = await response.text();
+        console.log('Respuesta del servidor:', responseText);
+
+        // Intentar parsear como JSON
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (jsonError) {
+          console.error('Error parseando JSON:', jsonError);
+          console.error('Texto recibido:', responseText);
+          throw new Error('La respuesta del servidor no es un JSON válido. Revisa la consola para más detalles.');
+        }
 
         if (data.success) {
-          // Mostrar mensaje detallado de éxito
-          await Swal.fire({
+          Swal.fire({
             icon: 'success',
             title: '¡Préstamo Registrado!',
             html: `
-                    <div style="text-align: left; padding: 10px;">
-                        <p><strong>Préstamo ID:</strong> #${data.prestamo_id}</p>
-                        <p><strong>Número de Boleta:</strong> ${data.numero_boleta}</p>
-                        <hr style="margin: 10px 0;">
-                        <p><strong>Monto del Préstamo:</strong> ${formatMoney(parseFloat(formData.get('monto')))}</p>
-                        <p><strong>Primera Cuota (Automática):</strong> ${formatMoney(data.primer_pago)}</p>
-                        <p style="color: #10b981; font-weight: 600;">
-                            <strong>Monto Entregado al Cliente:</strong> ${formatMoney(data.monto_entregado)}
-                        </p>
-                        <p style="color: #ef4444; font-weight: 600;">
-                            <strong>Saldo Pendiente:</strong> ${formatMoney(data.saldo_inicial)}
-                        </p>
-                        <hr style="margin: 10px 0;">
-                        <p style="font-size: 12px; color: #6b7280;">
-                            <i class="fas fa-info-circle"></i> Se ha registrado automáticamente el primer pago por concepto de boleta + cuota diaria
-                        </p>
-                    </div>
-                `,
-            confirmButtonColor: '#667eea',
-            width: '600px'
+          <div style="text-align: left; padding: 10px;">
+            <p><strong>Préstamo #${data.prestamo_id}</strong></p>
+            <p><strong>Boleta:</strong> ${data.numero_boleta}</p>
+            <p><strong>Valor Boleta:</strong> ${formatMoney(data.valor_boleta)}</p>
+            <p><strong>Periodicidad:</strong> ${data.periodicidad}</p>
+            <p><strong>Primer Descuento:</strong> ${formatMoney(data.primer_descuento)}</p>
+            <p><strong>Monto Entregado:</strong> ${formatMoney(data.monto_entregado)}</p>
+            <p><strong>Saldo Inicial:</strong> ${formatMoney(data.saldo_inicial)}</p>
+          </div>
+        `,
+            confirmButtonColor: '#667eea'
           });
 
           closeModal('modalPrestamo');
+          this.reset();
           cargarPrestamos();
           cargarEstadisticas();
         } else {
-          Swal.fire('Error', data.message, 'error');
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: data.message,
+            confirmButtonColor: '#ef4444'
+          });
         }
       } catch (error) {
         console.error('Error en fetch:', error);
-        Swal.fire('Error', 'No se pudo registrar el préstamo', 'error');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error de conexión',
+          text: error.message,
+          confirmButtonColor: '#ef4444'
+        });
       }
     });
 
@@ -1948,7 +2884,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
                 </p>
             </div>
         </div>
-    ` : ''}
+       ` : ''}
 
         <!-- Información del Préstamo -->
         <div style="margin-bottom: 15px; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 5px;">
@@ -1971,7 +2907,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           </p>
         </div>
       </div>
-    `;
+     `;
 
         // Mostrar en SweetAlert con opción de imprimir
         Swal.fire({
@@ -2061,21 +2997,21 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         }
 
         tbody.innerHTML = pagos.map(p => `
-      <tr>
-        <td>${p.cliente_nombre}</td>
-        <td>#${p.prestamo_id}</td>
-        <td>${formatMoney(p.cuota_diaria)}</td>
-        <td>${formatMoney(p.monto_pagado)}</td>
-        <td><span class="badge badge-info">${p.metodo_pago || 'efectivo'}</span></td>
-        <td>${p.fecha_pago}</td>
-        <td>${p.cobrador || '-'}</td>
-        <td>
-          <button class="btn btn-primary btn-sm" onclick="verComprobantePago(${p.id})" title="Ver comprobante">
-            <i class="fas fa-print"></i>
-          </button>
-        </td>
-      </tr>
-    `).join('');
+  <tr>
+    <td>${p.cliente_nombre}</td>
+    <td>${p.numero_boleta || 'N/A'}</td>
+    <td>${formatMoney(p.cuota_diaria)}</td>
+    <td>${formatMoney(p.monto_pagado)}</td>
+    <td><span class="badge badge-info">${p.metodo_pago || 'efectivo'}</span></td>
+    <td>${p.fecha_pago}</td>
+    <td>${p.cobrador || '-'}</td>
+    <td>
+      <button class="btn btn-primary btn-sm" onclick="verComprobantePago(${p.id})" title="Ver comprobante">
+        <i class="fas fa-print"></i>
+      </button>
+    </td>
+  </tr>
+  `).join('');
       } catch (error) {
         console.error('Error cargando pagos:', error);
       }
@@ -2119,13 +3055,13 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     function renderizarPrestamosModal(prestamos) {
       const select = document.getElementById('prestamo_pago');
 
-      if (prestamos.length === 0) {
+      if (prestamosData.length === 0) {
         select.innerHTML = '<option value="">No se encontraron préstamos</option>';
         return;
       }
 
       select.innerHTML = '<option value="">-- Seleccione un préstamo --</option>' +
-        prestamos.map(p => {
+        prestamosData.map(p => {
           const cuota = parseFloat(p.cuota_diaria);
           const saldo = parseFloat(p.saldo_pendiente);
           return `<option value="${p.id}" 
@@ -2464,6 +3400,33 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       return `${year}-${month}-${day}`;
     }
 
+    async function cargarEstadisticas() {
+      try {
+        const response = await fetch('/php/obtener_estadisticas.php');
+        const data = await response.json();
+
+        document.getElementById('total-prestado').textContent = formatMoney(data.total_prestado);
+        document.getElementById('total-recuperado').textContent = formatMoney(data.total_recuperado);
+        document.getElementById('total-ganancias').textContent = formatMoney(data.total_ganancias); // NUEVO
+        document.getElementById('clientes-activos').textContent = data.clientes_activos;
+        document.getElementById('clientes-morosos').textContent = data.clientes_morosos;
+        document.getElementById('saldo-disponible').textContent = formatMoney(data.saldo_disponible || 0);
+
+        // Gráficos (si los tienes implementados)
+        if (typeof crearGraficoCapital === 'function') {
+          crearGraficoCapital();
+        }
+        if (typeof crearGraficoIngresos7Dias === 'function') {
+          crearGraficoIngresos7Dias();
+        }
+        if (typeof crearGraficoEstadoPrestamos === 'function') {
+          crearGraficoEstadoPrestamos();
+        }
+      } catch (error) {
+        console.error('Error cargando estadísticas:', error);
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
       const today = obtenerFechaActual();
       document.getElementById('fecha_inicio').value = today;
@@ -2625,6 +3588,144 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       }
     }
   </script>
+
+  <script>
+    async function cargarReporteCaja() {
+      try {
+        const tipoReporte = document.getElementById('tipoReporteCaja').value;
+        let url = `/php/obtener_reportes_caja.php?tipo=${tipoReporte}`;
+
+        if (tipoReporte === 'personalizado') {
+          const fechaInicio = document.getElementById('fechaInicioCaja').value;
+          const fechaFin = document.getElementById('fechaFinCaja').value;
+
+          if (!fechaInicio || !fechaFin) {
+            Swal.fire('Error', 'Selecciona las fechas de inicio y fin', 'warning');
+            return;
+          }
+
+          url += `&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+        }
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!data.success) {
+          Swal.fire('Error', 'No se pudo cargar el reporte', 'error');
+          return;
+        }
+
+        // Línea agregada correctamente
+        ultimoReporteCaja = data;
+
+        // Actualizar tarjetas
+        document.getElementById('reporteSaldoInicial').textContent = formatMoney(data.saldo_inicial);
+        document.getElementById('reporteTotalIngresos').textContent = formatMoney(data.total_ingresos);
+        document.getElementById('reporteTotalEgresos').textContent = formatMoney(data.total_egresos);
+        document.getElementById('reporteSaldoFinal').textContent = formatMoney(data.saldo_final);
+
+        const contenedor = document.getElementById('contenedorReporteCaja');
+
+        if (data.movimientos_por_fecha.length === 0) {
+          contenedor.innerHTML = '<p style="text-align: center; padding: 40px; color: #6b7280;">No hay movimientos en este período</p>';
+          return;
+        }
+
+        let html = `
+      <div style="margin-bottom: 20px; padding: 15px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #667eea;">
+        <h4 style="margin: 0; color: #667eea;">
+          <i class="fas fa-calendar"></i> 
+          Reporte ${tipoReporte.charAt(0).toUpperCase() + tipoReporte.slice(1)}
+        </h4>
+        <p style="margin: 5px 0 0 0; color: #6b7280; font-size: 14px;">
+          Período: ${data.fecha_inicio} al ${data.fecha_fin} | 
+          Total de movimientos: ${data.total_movimientos} |
+          Balance: <strong style="color: ${data.balance >= 0 ? '#10b981' : '#ef4444'}">${formatMoney(data.balance)}</strong>
+        </p>
+      </div>
+    `;
+
+        // INICIO PRIMER foreach
+        data.movimientos_por_fecha.forEach(grupo => {
+          const balance_dia = grupo.ingresos - grupo.egresos;
+
+          html += `
+        <div style="margin-bottom: 25px; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+          <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div><i class="fas fa-calendar-day"></i> ${grupo.fecha}</div>
+            <div style="font-size: 14px;">
+              <span style="margin-right: 15px;"><i class="fas fa-arrow-up"></i> ${formatMoney(grupo.ingresos)}</span>
+              <span style="margin-right: 15px;"><i class="fas fa-arrow-down"></i> ${formatMoney(grupo.egresos)}</span>
+              <span style="font-weight: 700;">Balance: ${formatMoney(balance_dia)}</span>
+            </div>
+          </div>
+          
+          <table style="width: 100%; margin: 0;">
+            <thead style="background: #f9fafb;">
+              <tr>
+                <th style="padding: 10px; text-align: left;">Hora</th>
+                <th style="padding: 10px; text-align: left;">Tipo</th>
+                <th style="padding: 10px; text-align: left;">Concepto</th>
+                <th style="padding: 10px; text-align: left;">Cédula</th>
+                <th style="padding: 10px; text-align: left;">Referencia</th>
+                <th style="padding: 10px; text-align: left;">Usuario</th>
+                <th style="padding: 10px; text-align: right;">Monto</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+          // INICIO SEGUNDO foreach
+          grupo.movimientos.forEach(mov => {
+            const fecha = new Date(mov.fecha_movimiento);
+            const hora = fecha.toLocaleTimeString('es-CO', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: true,
+              timeZone: 'America/Bogota'
+            });
+
+            const colorMonto = mov.tipo === 'ingreso' ? '#10b981' : '#ef4444';
+            const iconoTipo = mov.tipo === 'ingreso' ? 'fa-arrow-circle-up' : 'fa-arrow-circle-down';
+
+            html += `
+          <tr style="border-bottom: 1px solid #f3f4f6;">
+            <td style="padding: 10px;">${hora}</td>
+            <td style="padding: 10px;">
+              <span class="badge badge-${mov.tipo === 'ingreso' ? 'success' : 'danger'}">
+                <i class="fas ${iconoTipo}"></i> ${mov.tipo.toUpperCase()}
+              </span>
+            </td>
+            <td style="padding: 10px;">${mov.concepto}</td>
+            <td style="padding: 10px; font-size: 12px; color: #6b7280;">${mov.cedula_cliente || '-'}</td>
+            <td style="padding: 10px; font-size: 12px; color: #6b7280;">${mov.referencia || '-'}</td>
+            <td style="padding: 10px;">${mov.usuario_nombre || 'Sistema'}</td>
+            <td style="padding: 10px; text-align: right; font-weight: 700; color: ${colorMonto};">
+              ${mov.tipo === 'ingreso' ? '+' : '-'}${formatMoney(mov.monto)}
+            </td>
+          </tr>
+        `;
+          }); // ← cierre correcto del segundo foreach
+
+          html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+        }); // ← cierre correcto del primer foreach
+
+        contenedor.innerHTML = html;
+
+      } catch (error) {
+        console.error('Error cargando reporte de caja:', error);
+        Swal.fire('Error', 'No se pudo cargar el reporte', 'error');
+      }
+    }
+  </script>
+
+
+
 </body>
 
 </html>
