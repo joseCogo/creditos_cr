@@ -160,18 +160,18 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           <div class="card">
             <div class="card-header">
               <div class="card-icon warning">
-                <i class="fas fa-undo"></i>
+                <i class="fas fa-ticket-alt"></i>
               </div>
             </div>
-            <div class="card-title">Total Recuperado</div>
+            <div class="card-title">Ganancias Boletas</div>
             <div class="card-value" id="total-recuperado">$0</div>
             <div class="card-footer">
               <i class="fas fa-arrow-down" style="color: var(--warning-color);"></i>
-              <span>Capital recuperado</span>
+              <span>Descuento primera cuota</span>
             </div>
           </div>
 
-          <!-- CARD NUEVO: Ganancias -->
+          <!-- CARD: Ganancias -->
           <div class="card">
             <div class="card-header">
               <div class="card-icon success">
@@ -182,7 +182,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
             <div class="card-value" id="total-ganancias">$0</div>
             <div class="card-footer">
               <i class="fas fa-chart-line" style="color: var(--success-color);"></i>
-              <span>Total de pagos recibidos</span>
+              <span>Todos los pagos recibidos</span>
             </div>
           </div>
 
@@ -702,7 +702,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         </div>
 
         <div class="form-group">
-          <label for="cuotas">Número de Cuotas (días) *</label>
+          <label for="cuotas">Número de Cuotas *</label>
           <input type="number" name="cuotas" id="cuotas" required value="30" min="1" onchange="calcularCuota()" oninput="calcularCuota()">
         </div>
 
@@ -735,11 +735,11 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
               <div style="font-size: 12px; color: #6b7280;">Monto Total a Pagar</div>
               <div style="font-size: 20px; font-weight: 700; color: var(--primary-color);" id="montoTotal">$0</div>
             </div>
-
-            <div>
+            <input type="hidden" id="cuotaDiaria"></input>
+            <!-- <div>
               <div style="font-size: 12px; color: #6b7280;">Cuota Diaria Normal</div>
               <div style="font-size: 20px; font-weight: 700; color: var(--success-color);" id="cuotaDiaria">$0</div>
-            </div>
+            </div> -->
             <div>
               <div style="font-size: 12px; color: #6b7280;">Cuota Según Periodicidad</div>
               <div style="font-size: 20px; font-weight: 700; color: var(--warning-color);" id="cuotaPeriodica">$0</div>
@@ -756,10 +756,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
               <i class="fas fa-ticket-alt"></i> Primera Cuota (Automática)
             </h4>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
-              <div>
-                <div style="font-size: 12px; color: #78350f;">Valor de Boleta</div>
-                <div style="font-size: 18px; font-weight: 700; color: #f59e0b;" id="valorBoleta">$0</div>
-              </div>
+
               <div>
                 <div style="font-size: 12px; color: #78350f;">Primera Cuota Total</div>
                 <div style="font-size: 18px; font-weight: 700; color: #ef4444;" id="primeraCuota">$0</div>
@@ -1115,8 +1112,15 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
     function openModal(modalId) {
       document.getElementById(modalId).classList.add('active');
-      if (modalId === 'modalPrestamo') cargarClientesSelect();
-      if (modalId === 'modalPago') cargarPrestamosSelect();
+
+      if (modalId === 'modalPrestamo') {
+        cargarClientesSelect();
+        obtenerSaldoCaja(); // <-- NUEVO: Cargar saldo al abrir el modal
+      }
+
+      if (modalId === 'modalPago') {
+        cargarPrestamosSelect();
+      }
     }
 
     function closeModal(modalId) {
@@ -1144,7 +1148,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       const formData = new FormData(this);
 
       try {
-        const response = await fetch('../php/agregar_saldo.php', {
+        const response = await fetch('/php/agregar_saldo.php', {
           method: 'POST',
           body: formData
         });
@@ -1174,7 +1178,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     // FUNCIÓN PARA CARGAR MOVIMIENTOS DE CAJA
     async function cargarMovimientosCaja() {
       try {
-        const response = await fetch('../php/obtener_movimientos_caja.php');
+        const response = await fetch('/php/obtener_movimientos_caja.php');
         const movimientos = await response.json();
 
         const container = document.getElementById('movimientosContainer');
@@ -1643,7 +1647,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       if (!ctx) return;
 
       try {
-        const response = await fetch('../php/obtener_estadisticas.php');
+        const response = await fetch('/php/obtener_estadisticas.php');
         const data = await response.json();
 
         // Destruir gráfico anterior si existe
@@ -1713,7 +1717,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       if (!ctx) return;
 
       try {
-        const response = await fetch('../php/obtener_estadisticas.php');
+        const response = await fetch('/php/obtener_estadisticas.php');
         const data = await response.json();
         const pagos7dias = data.pagos_7dias || [];
 
@@ -1781,7 +1785,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       if (!ctx) return;
 
       try {
-        const response = await fetch('../php/obtener_prestamos.php');
+        const response = await fetch('/php/obtener_prestamos.php');
         const prestamos = await response.json();
 
         const activos = prestamos.filter(p => p.estado === 'activo').length;
@@ -1838,7 +1842,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
   <script>
     async function cargarReportes() {
       try {
-        const response = await fetch('../php/obtener_reportes.php');
+        const response = await fetch('/php/obtener_reportes.php');
         const data = await response.json();
 
         // Actualizar cards de ingresos
@@ -1874,7 +1878,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
     async function cargarClientes() {
       try {
-        const response = await fetch('../php/obtener_cliente.php');
+        const response = await fetch('/php/obtener_cliente.php');
         clientesData = await response.json();
 
         renderizarClientes();
@@ -2001,7 +2005,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       }
 
       try {
-        const response = await fetch('../php/registrar_cliente.php', {
+        const response = await fetch('/php/registrar_cliente.php', {
           method: 'POST',
           body: formData
         });
@@ -2027,7 +2031,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
     async function abrirEditarCliente(cedula) {
       try {
-        const response = await fetch(`../php/obtener_cliente.php?cedula=${cedula}`);
+        const response = await fetch(`/php/obtener_cliente.php?cedula=${cedula}`);
         const cliente = await response.json();
 
         document.getElementById('editCedula').value = cliente.cedula;
@@ -2047,7 +2051,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       const formData = new FormData(this);
 
       try {
-        const response = await fetch('../php/editar_cliente.php', {
+        const response = await fetch('/php/editar_cliente.php', {
           method: 'POST',
           body: formData
         });
@@ -2079,7 +2083,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           formData.append('cedula', cedula);
 
           try {
-            const response = await fetch('../php/eliminar_cliente.php', {
+            const response = await fetch('/php/eliminar_cliente.php', {
               method: 'POST',
               body: formData
             });
@@ -2107,7 +2111,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     async function cargarPrestamos() {
       try {
         const filtro = document.getElementById('filtroPrestamos').value;
-        let url = '../php/obtener_prestamos.php';
+        let url = '/php/obtener_prestamos.php';
         if (filtro) {
           url += `?estado=${filtro}`;
         }
@@ -2254,7 +2258,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
     async function verDetallePrestamo(prestamoId) {
       try {
-        const response = await fetch(`../php/obtener_detalle_prestamo.php?id=${prestamoId}`);
+        const response = await fetch(`/php/obtener_detalle_prestamo.php?id=${prestamoId}`);
         const data = await response.json();
 
         if (!data.success) {
@@ -2439,10 +2443,12 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
     // Variables globales para clientes en modal de préstamo
     let clientesModalData = [];
+    // NUEVO: Variable para almacenar el saldo disponible
+    let saldoDisponibleCaja = 0;
 
     async function cargarClientesSelect() {
       try {
-        const response = await fetch('../php/obtener_cliente.php');
+        const response = await fetch('/php/obtener_cliente.php');
         const clientes = await response.json();
 
         // Guardar clientes globalmente
@@ -2618,6 +2624,9 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
       const montoTotal = monto + (monto * (interes / 100));
       const cuotaDiaria = cuotas > 0 ? montoTotal / cuotas : 0;
+      const primeracuota = cuotaDiaria;
+      const montoentregado = montoTotal - cuotaDiaria;
+
 
       // Calcular cuota según periodicidad
       let cuotaPeriodica = 0;
@@ -2626,10 +2635,10 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           cuotaPeriodica = cuotaDiaria;
           break;
         case 'semanal':
-          cuotaPeriodica = cuotaDiaria * 7;
+          cuotaPeriodica = montoTotal / cuotas;
           break;
         case 'quincenal':
-          cuotaPeriodica = cuotaDiaria * 15;
+          cuotaPeriodica = montoTotal / cuotas;
           break;
       }
 
@@ -2637,6 +2646,8 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       document.getElementById('montoTotal').textContent = formatMoney(montoTotal);
       document.getElementById('cuotaDiaria').textContent = formatMoney(cuotaDiaria);
       document.getElementById('cuotaPeriodica').textContent = formatMoney(cuotaPeriodica);
+      document.getElementById('primeraCuota').textContent = formatMoney(primeracuota);
+      document.getElementById('montoEntregado').textContent = formatMoney(montoentregado);
 
       // Guardar cuota diaria en campo oculto
       document.getElementById('cuota_diaria').value = cuotaDiaria.toFixed(2);
@@ -2708,6 +2719,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       // Validar que los campos calculados tengan valores
       const fecha_fin = document.getElementById('fecha_fin').value;
       const cuota_diaria = document.getElementById('cuota_diaria').value;
+      const monto = parseFloat(document.getElementById('monto')?.value) || 0; // Obtener monto
 
       if (!fecha_fin || !cuota_diaria || cuota_diaria === '0') {
         Swal.fire({
@@ -2719,6 +2731,21 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         return;
       }
 
+      // ❗ VALIDACIÓN DE SALDO EN FRONTEND
+      if (saldoDisponibleCaja < monto) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Saldo Insuficiente en Caja',
+          html: `
+            <p>El Monto del Préstamo (${formatMoney(monto)}) es mayor que el Saldo Disponible en Caja (${formatMoney(saldoDisponibleCaja)}).</p>
+            <p style="color: #ef4444; font-weight: 600;">No se puede registrar el préstamo.</p>
+        `,
+          confirmButtonColor: '#ef4444'
+        });
+        return;
+      }
+      // ❗ FIN VALIDACIÓN DE SALDO
+
       const formData = new FormData(this);
 
       // Debug: Ver qué datos se están enviando
@@ -2728,10 +2755,11 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       }
 
       try {
-        const response = await fetch('../php/registrar_prestamo.php', {
+        const response = await fetch('/php/registrar_prestamo.php', {
           method: 'POST',
           body: formData
         });
+
 
         // Obtener el texto completo de la respuesta
         const responseText = await response.text();
@@ -2791,7 +2819,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     // FUNCIÓN PARA VER COMPROBANTE DE PAGO
     async function verComprobantePago(pagoId) {
       try {
-        const response = await fetch(`../php/generar_comprobante.php?id=${pagoId}`);
+        const response = await fetch(`/php/generar_comprobante.php?id=${pagoId}`);
         const data = await response.json();
 
         if (!data.success) {
@@ -2978,7 +3006,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       try {
         const fechaSeleccionada = document.getElementById('fechaPago').value;
 
-        let url = '../php/obtener_pagos.php';
+        let url = '/php/obtener_pagos.php';
         if (fechaSeleccionada) {
           url += `?fecha=${fechaSeleccionada}`;
         }
@@ -3022,7 +3050,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
     async function cargarPrestamosSelect() {
       try {
-        const response = await fetch('../php/obtener_prestamos.php');
+        const response = await fetch('/php/obtener_prestamos.php');
         const prestamos = await response.json();
 
         // Guardar solo préstamos activos
@@ -3152,7 +3180,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       const formData = new FormData(this);
 
       try {
-        const response = await fetch('../php/registrar_pago.php', {
+        const response = await fetch('/php/registrar_pago.php', {
           method: 'POST',
           body: formData
         });
@@ -3191,7 +3219,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     // SECCIÓN USUARIOS - CRUD COMPLETO
     async function cargarUsuarios() {
       try {
-        const response = await fetch('../php/obtener_usuarios.php');
+        const response = await fetch('/php/obtener_usuarios.php');
         const text = await response.text();
 
         let usuarios;
@@ -3244,7 +3272,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       const formData = new FormData(this);
 
       try {
-        const response = await fetch('../php/registrar_usuario.php', {
+        const response = await fetch('/php/registrar_usuario.php', {
           method: 'POST',
           body: formData
         });
@@ -3266,7 +3294,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     // Abrir modal para editar usuario
     async function abrirEditarUsuario(usuarioId) {
       try {
-        const response = await fetch('../php/obtener_usuarios.php');
+        const response = await fetch('/php/obtener_usuarios.php');
         const usuarios = await response.json();
 
         const usuario = usuarios.find(u => u.id == usuarioId);
@@ -3295,7 +3323,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       const formData = new FormData(this);
 
       try {
-        const response = await fetch('../php/editar_usuario.php', {
+        const response = await fetch('/php/editar_usuario.php', {
           method: 'POST',
           body: formData
         });
@@ -3331,7 +3359,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           formData.append('usuario_id', usuarioId);
 
           try {
-            const response = await fetch('../php/eliminar_usuario.php', {
+            const response = await fetch('/php/eliminar_usuario.php', {
               method: 'POST',
               body: formData
             });
@@ -3391,6 +3419,22 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       }).format(amount);
     }
 
+    // Función para obtener el saldo disponible en caja
+    async function obtenerSaldoCaja() {
+      try {
+        const response = await fetch('/php/obtener_saldo.php');
+        const data = await response.json();
+        if (data.success) {
+          saldoDisponibleCaja = parseFloat(data.saldo);
+        } else {
+          saldoDisponibleCaja = 0;
+        }
+      } catch (error) {
+        saldoDisponibleCaja = 0;
+        console.error('Error de conexión al obtener saldo:', error);
+      }
+    }
+
     // Función para obtener la fecha actual en formato YYYY-MM-DD (zona horaria local)
     function obtenerFechaActual() {
       const hoy = new Date();
@@ -3402,7 +3446,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
     async function cargarEstadisticas() {
       try {
-        const response = await fetch('../php/obtener_estadisticas.php');
+        const response = await fetch('/php/obtener_estadisticas.php');
         const data = await response.json();
 
         document.getElementById('total-prestado').textContent = formatMoney(data.total_prestado);
@@ -3549,7 +3593,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           formData.append('prestamo_id', prestamoId);
           formData.append('observacion', result.value || 'Cliente ganador de rifa');
 
-          const response = await fetch('../php/marcar_ganador_rifa.php', {
+          const response = await fetch('/php/marcar_ganador_rifa.php', {
             method: 'POST',
             body: formData
           });
@@ -3593,7 +3637,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     async function cargarReporteCaja() {
       try {
         const tipoReporte = document.getElementById('tipoReporteCaja').value;
-        let url = `../php/obtener_reportes_caja.php?tipo=${tipoReporte}`;
+        let url = `/php/obtener_reportes_caja.php?tipo=${tipoReporte}`;
 
         if (tipoReporte === 'personalizado') {
           const fechaInicio = document.getElementById('fechaInicioCaja').value;

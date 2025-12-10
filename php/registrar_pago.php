@@ -1,10 +1,10 @@
 <?php
 session_start();
-date_default_timezone_set('America/Bogota');  // Forzar zona horaria de Colombia (-05:00)
+date_default_timezone_set('America/Bogota');
 header('Content-Type: application/json');
 include("conexion.php");
 
-// Logging inicial para depurar
+// Logging inicial
 error_log("Iniciando registro de pago. Usuario ID: " . ($_SESSION['usuario_id'] ?? 'No definido'));
 
 if (!isset($_SESSION['usuario_id'])) {
@@ -47,7 +47,7 @@ $boleta = mysqli_fetch_assoc($result_boleta);
 $valor_boleta = $boleta ? floatval($boleta['valor_boleta']) : 0;
 $boleta_descontada = $boleta ? (bool)$boleta['boleta_descontada'] : false;
 
-// Verificar si es el primer pago
+// Verificar si es primer pago
 $sql_count = "SELECT COUNT(*) as total FROM pagos WHERE prestamo_id = ?";
 $stmt_count = mysqli_prepare($conexion, $sql_count);
 mysqli_stmt_bind_param($stmt_count, "i", $prestamo_id);
@@ -61,13 +61,11 @@ $cuota_diaria = floatval($prestamo['cuota_diaria']);
 $tipo_pago = 'parcial';
 
 if ($es_primer_pago && !$boleta_descontada) {
-    // Primera cuota: comparar con (cuota_diaria - valor_boleta)
     $cuota_esperada = $cuota_diaria - $valor_boleta;
     if ($monto_pagado >= $cuota_esperada) {
         $tipo_pago = 'completo';
     }
 } else {
-    // Pagos normales
     if ($monto_pagado >= $cuota_diaria) {
         $tipo_pago = 'completo';
     }
@@ -77,17 +75,19 @@ if ($es_primer_pago && !$boleta_descontada) {
 mysqli_begin_transaction($conexion);
 
 try {
-    // Calcular fecha actual (sin hora, solo fecha del día en Colombia)
-    $fecha_actual = date('Y-m-d');  // Usa la zona configurada arriba
-    error_log("Fecha calculada: " . $fecha_actual);  // Logging aquí para que siempre se ejecute
+    // Fecha exacta (sin hora)
+    $fecha_actual = date('Y-m-d');
+    error_log("Fecha calculada: " . $fecha_actual);
 
-    // Registrar pago - ORDEN CORREGIDO: coincide con VALUES
+    // Registrar pago
     $sql = "INSERT INTO pagos (prestamo_id, fecha_pago, monto_pagado, metodo_pago, observacion, usuario_id) 
             VALUES (?, ?, ?, ?, ?, ?)";
 
     $stmt = mysqli_prepare($conexion, $sql);
-    // Tipos: i (prestamo_id), s (fecha), d (monto), s (metodo), s (obs), i (usuario)
-    mysqli_stmt_bind_param($stmt, "isdsii", $prestamo_id, $fecha_actual, $monto_pagado, $metodo_pago, $observacion, $usuario_id);
+    mysqli_stmt_bind_param($stmt, "isdsii",
+        $prestamo_id, $fecha_actual, $monto_pagado,
+        $metodo_pago, $observacion, $usuario_id
+    );
 
     if (!mysqli_stmt_execute($stmt)) {
         throw new Exception('Error al registrar pago: ' . mysqli_error($conexion));
@@ -107,7 +107,7 @@ try {
         throw new Exception('Error al actualizar préstamo');
     }
 
-    // Si es primer pago, marcar boleta como descontada
+    // Marcar boleta descontada si corresponde
     if ($es_primer_pago && !$boleta_descontada && $boleta) {
         $sql_update_boleta = "UPDATE boletas_prestamos 
                               SET boleta_descontada = TRUE, fecha_descuento = CURDATE() 
@@ -117,7 +117,37 @@ try {
         mysqli_stmt_execute($stmt_boleta_update);
     }
 
-    // Confirmar transacción
+    /* ============================================================
+       🆕 INTEGRACIÓN NUEVA:
+       SUMAR EL PAGO A LA CAJA (INGRESO)
+       ============================================================ */
+
+    // // 1️⃣ Sumar dinero a la caja
+    // $sql_sumar = "UPDATE caja SET saldo_actual = saldo_actual + ? WHERE id = 1";
+    // $stmt_sumar = mysqli_prepare($conexion, $sql_sumar);
+    // mysqli_stmt_bind_param($stmt_sumar, "d", $monto_pagado);
+
+    // if (!mysqli_stmt_execute($stmt_sumar)) {
+    //     throw new Exception('Error al actualizar saldo de caja');
+    // }
+
+   // 2️⃣ Registrar movimiento de ingreso
+    $concepto = "Pago préstamo #$prestamo_id";
+    $referencia = "PAGO-$prestamo_id";
+
+    $sql_movimiento = "INSERT INTO movimientos_caja (tipo, monto, concepto, referencia, usuario_id) 
+                       VALUES ('ingreso', ?, ?, ?, ?)";
+
+    $stmt_movimiento = mysqli_prepare($conexion, $sql_movimiento);
+    mysqli_stmt_bind_param($stmt_movimiento, "dssi",
+        $monto_pagado, $concepto, $referencia, $usuario_id
+    );
+
+    if (!mysqli_stmt_execute($stmt_movimiento)) {
+        throw new Exception('Error al registrar movimiento en caja');
+    }
+
+    // Confirmar todo
     mysqli_commit($conexion);
 
     echo json_encode([
@@ -131,7 +161,7 @@ try {
 
 } catch (Exception $e) {
     mysqli_rollback($conexion);
-    error_log("Error en registrar_pago.php: " . $e->getMessage());  // Logging adicional
+    error_log("Error en registrar_pago.php: " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 

@@ -1093,7 +1093,8 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                 }
 
                 // Configuración de columnas para cada tabla
-                const tableRules = {};
+                const tableRules = {
+                };
 
                 // Función general para ocultar columnas
                 function applyResponsiveTables() {

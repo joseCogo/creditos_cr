@@ -4,26 +4,28 @@ include("conexion.php");
 
 $estado = $_GET['estado'] ?? '';
 
-if (!empty($estado)) {
-    $sql = "SELECT p.*, c.nombre as cliente_nombre, c.cedula as cliente_cedula 
-            FROM prestamos p 
-            INNER JOIN clientes c ON p.cliente_id = c.id 
-            WHERE p.estado = ?
-            ORDER BY p.id DESC";
+$sql = "SELECT p.*, c.nombre as cliente_nombre, c.cedula as cliente_cedula 
+        FROM prestamos p
+        INNER JOIN clientes c ON p.cliente_id = c.id";
+
+if ($estado) {
+    $sql .= " WHERE p.estado = ?";
     $stmt = mysqli_prepare($conexion, $sql);
     mysqli_stmt_bind_param($stmt, "s", $estado);
     mysqli_stmt_execute($stmt);
-    $resultado = mysqli_stmt_get_result($stmt);
+    $result = mysqli_stmt_get_result($stmt);
 } else {
-    $sql = "SELECT p.*, c.nombre as cliente_nombre, c.cedula as cliente_cedula 
-            FROM prestamos p 
-            INNER JOIN clientes c ON p.cliente_id = c.id 
-            ORDER BY p.id DESC";
-    $resultado = mysqli_query($conexion, $sql);
+    $sql .= " ORDER BY p.id DESC";
+    $result = mysqli_query($conexion, $sql);
+}
+
+if (!$result) {
+    echo json_encode(["error" => mysqli_error($conexion)]);
+    exit;
 }
 
 $prestamos = [];
-while ($row = mysqli_fetch_assoc($resultado)) {
+while ($row = mysqli_fetch_assoc($result)) {
     $prestamos[] = $row;
 }
 
