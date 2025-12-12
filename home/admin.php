@@ -64,7 +64,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       <li class="menu-item">
         <a class="menu-link" onclick="showSection('pagos')">
           <i class="fas fa-hand-holding-usd"></i>
-          <span>Pagos Diarios</span>
+          <span>Pagos</span>
         </a>
       </li>
       <li class="menu-item">
@@ -299,13 +299,49 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
       <!-- Pagos Section -->
       <section id="pagos" class="section">
+
+        <div class="table-container" style="margin-bottom: 30px; border-left: 4px solid #f59e0b;">
+          <div class="table-header">
+            <h3><i class="fas fa-clock" style="color: #f59e0b;"></i> Cuotas Atrasadas</h3>
+            <div class="search-box">
+              <span style="font-weight: 600; color: #ef4444; margin-right: 10px;">
+                Total Pendientes: <span id="total-pendientes-admin">0</span>
+              </span>
+              <input type="text" class="search-input" id="buscarPendienteAdmin"
+                placeholder="Buscar deudor..."
+                onkeyup="renderizarPendientesAdmin()">
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Cédula</th>
+                  <th>Cliente</th>
+                  <th>Frecuencia</th>
+                  <th>Valor Cuota</th>
+                  <th>Monto en Mora</th>
+                  <th>Cuotas Atrasadas</th>
+                  <th>Próximo Pago</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-pendientes-admin">
+                <tr>
+                  <td colspan="7" style="text-align: center;">Cargando cartera vencida...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="table-container">
           <div class="table-header">
-            <h3>Registro de Pagos Diarios</h3>
+            <h3><i class="fas fa-history"></i> Historial de Pagos Recibidos</h3>
             <div class="search-box">
               <input type="date" class="search-input" id="fechaPago" onchange="cargarPagos()">
               <button class="btn btn-success" onclick="openModal('modalPago')">
-                <i class="fas fa-plus"></i> Registrar Pago
+                <i class="fas fa-plus"></i> Registrar Pago Manual
               </button>
             </div>
           </div>
@@ -1099,6 +1135,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       if (id === 'clientes') cargarClientes();
       if (id === 'prestamos') cargarPrestamos();
       if (id === 'pagos') cargarPagos();
+      cargarPendientesAdmin();
       if (id === 'usuarios') cargarUsuarios();
       if (id === 'dashboard') cargarEstadisticas();
       if (id === 'reportes') cargarReportes();
@@ -2594,19 +2631,6 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         document.getElementById('formEditarUsuario').reset();
       }
     }
-
-    // Asegurarse de que openModal llame a la función correcta
-    function openModal(modalId) {
-      document.getElementById(modalId).classList.add('active');
-
-      if (modalId === 'modalPrestamo') {
-        cargarClientesSelect();
-      }
-
-      if (modalId === 'modalPago') {
-        cargarPrestamosSelect();
-      }
-    }
   </script>
 
   <script>
@@ -2617,52 +2641,61 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       const fechaInicio = document.getElementById('fecha_inicio')?.value;
       const periodicidad = document.getElementById('periodicidad')?.value || 'diario';
 
-      // Validar que haya valores
-      if (monto === 0 || cuotas === 0) {
-        return;
-      }
+      if (monto === 0 || cuotas === 0) return;
 
       const montoTotal = monto + (monto * (interes / 100));
-      const cuotaDiaria = cuotas > 0 ? montoTotal / cuotas : 0;
-      const primeracuota = cuotaDiaria;
-      const montoentregado = montoTotal - cuotaDiaria;
-
-
-      // Calcular cuota según periodicidad
+      let cuotaDiaria = 0;
+      let primeracuota = 0;
+      let montoentregado = 0;
       let cuotaPeriodica = 0;
-      switch (periodicidad) {
-        case 'diario':
-          cuotaPeriodica = cuotaDiaria;
-          break;
-        case 'semanal':
-          cuotaPeriodica = montoTotal / cuotas;
-          break;
-        case 'quincenal':
-          cuotaPeriodica = montoTotal / cuotas;
-          break;
+
+      // 1. Determinar el multiplicador de días según la periodicidad
+      let multiplicadorDias = 1; // Diario por defecto
+
+      if (periodicidad === 'semanal') {
+        multiplicadorDias = 7;
+        cuotaPeriodica = montoTotal / cuotas;
+        cuotaDiaria = cuotaPeriodica / 7; // Valor referencial diario
+      } else if (periodicidad === 'quincenal') {
+        multiplicadorDias = 15;
+        cuotaPeriodica = montoTotal / cuotas;
+        cuotaDiaria = cuotaPeriodica / 15; // Valor referencial diario
+      } else {
+        // Diario
+        multiplicadorDias = 1;
+        cuotaPeriodica = montoTotal / cuotas;
+        cuotaDiaria = cuotaPeriodica;
       }
+
+      // Cálculos financieros
+      primeracuota = cuotaPeriodica; // La primera cuota es el valor del periodo
+      montoentregado = montoTotal - primeracuota; // Restamos la primera cuota
 
       // Actualizar valores en pantalla
       document.getElementById('montoTotal').textContent = formatMoney(montoTotal);
-      document.getElementById('cuotaDiaria').textContent = formatMoney(cuotaDiaria);
       document.getElementById('cuotaPeriodica').textContent = formatMoney(cuotaPeriodica);
       document.getElementById('primeraCuota').textContent = formatMoney(primeracuota);
       document.getElementById('montoEntregado').textContent = formatMoney(montoentregado);
 
-      // Guardar cuota diaria en campo oculto
-      document.getElementById('cuota_diaria').value = cuotaDiaria.toFixed(2);
+      // Guardar cuota (usamos la periódica como base para el sistema)
+      document.getElementById('cuota_diaria').value = cuotaPeriodica.toFixed(2);
 
-      // Calcular y guardar fecha de vencimiento
+      // 2. CALCULAR FECHA FIN CORRECTA (Corrección solicitada)
       if (fechaInicio && cuotas > 0) {
-        const fecha = new Date(fechaInicio + 'T00:00:00'); // Agregar hora para evitar problemas de zona horaria
-        fecha.setDate(fecha.getDate() + cuotas);
+        const fecha = new Date(fechaInicio + 'T00:00:00');
+
+        // Multiplicamos el número de cuotas por los días del periodo
+        const diasTotales = cuotas * multiplicadorDias;
+
+        fecha.setDate(fecha.getDate() + diasTotales);
+
         const vencimiento = fecha.toISOString().split('T')[0];
 
         document.getElementById('fechaVencimiento').textContent = vencimiento;
-        document.getElementById('fecha_fin').value = vencimiento; // CRÍTICO: Guardar en campo oculto
+        document.getElementById('fecha_fin').value = vencimiento;
       } else {
         document.getElementById('fechaVencimiento').textContent = '--';
-        document.getElementById('fecha_fin').value = ''; // Limpiar si no hay fecha
+        document.getElementById('fecha_fin').value = '';
       }
     }
 
@@ -3194,6 +3227,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
 
           await cargarPagos();
           await cargarEstadisticas();
+          cargarPendientesAdmin();
 
           Swal.fire({
             icon: 'success',
@@ -3768,7 +3802,128 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     }
   </script>
 
+  <script>
+    /* ========================================================
+   LOGICA DE CARTERA VENCIDA PARA ADMIN
+   ======================================================== */
 
+    // Variable global para almacenar los pendientes del admin
+    let pendientesAdminData = [];
+
+    // 1. Función para cargar los datos del servidor
+    async function cargarPendientesAdmin() {
+      try {
+        // Reutilizamos el mismo archivo que usa el empleado (la lógica es la misma)
+        const response = await fetch('/php/obtener_clientes_pendientes.php');
+        const data = await response.json();
+
+        pendientesAdminData = data.clientes || [];
+
+        // Actualizar contador
+        const totalElem = document.getElementById('total-pendientes-admin');
+        if (totalElem) totalElem.textContent = pendientesAdminData.length;
+
+        renderizarPendientesAdmin();
+
+      } catch (error) {
+        console.error('Error cargando pendientes:', error);
+        const tbody = document.getElementById('tabla-pendientes-admin');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Error al cargar datos</td></tr>';
+      }
+    }
+
+    // 2. Función para pintar la tabla
+    function renderizarPendientesAdmin() {
+      const tbody = document.getElementById('tabla-pendientes-admin');
+      if (!tbody) return;
+
+      const busqueda = document.getElementById('buscarPendienteAdmin')?.value.toLowerCase() || '';
+
+      const filtrados = pendientesAdminData.filter(cliente =>
+        cliente.cliente_nombre.toLowerCase().includes(busqueda) ||
+        cliente.cedula.toLowerCase().includes(busqueda)
+      );
+
+      if (filtrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #10b981; font-weight: 600;">✓ No hay cuotas atrasadas pendientes</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtrados.map(cliente => {
+        const cuotasAtrasadas = parseInt(cliente.cuotas_atrasadas);
+        const periodicidad = cliente.periodicidad || 'Diario';
+        const valorCuota = parseFloat(cliente.valor_cuota);
+        const montoEnMora = parseFloat(cliente.falta_pagar);
+
+        // Lógica de Fecha
+        let fechaHtml = '-';
+        if (cliente.proximo_pago) {
+          const fechaObj = new Date(cliente.proximo_pago + 'T00:00:00');
+          const hoy = new Date();
+          hoy.setHours(0, 0, 0, 0);
+
+          const fechaTexto = fechaObj.toLocaleDateString('es-CO', {
+            day: 'numeric',
+            month: 'short'
+          });
+          const colorFecha = fechaObj < hoy ? '#ef4444' : '#10b981'; // Rojo si venció
+          fechaHtml = `<div style="font-weight:700; color:${colorFecha};">${fechaTexto}</div>`;
+        }
+
+        // Estilos
+        let badgeClass = cuotasAtrasadas >= 3 ? 'badge-danger' : 'badge-warning';
+        let rowStyle = cuotasAtrasadas >= 3 ? 'background-color: #fee2e2;' : 'background-color: #fffbeb;';
+
+        let badgePeriodo = '';
+        if (periodicidad === 'Semanal') badgePeriodo = '<span class="badge badge-info" style="font-size:10px;">Semanal</span>';
+        else if (periodicidad === 'Quincenal') badgePeriodo = '<span class="badge badge-success" style="font-size:10px;">Quincenal</span>';
+        else badgePeriodo = '<span class="badge badge-secondary" style="font-size:10px;">Diario</span>';
+
+        // ORDEN CORREGIDO DE COLUMNAS (8 Columnas):
+        // 1. Cédula | 2. Cliente | 3. Frecuencia | 4. Valor Cuota | 5. Monto Mora | 6. Cuotas Atrasadas | 7. Próximo Pago | 8. Acciones
+        return `
+            <tr style="${rowStyle}">
+                <td>${cliente.cedula}</td>
+                <td style="font-weight: 600;">${cliente.cliente_nombre}</td>
+                <td>${badgePeriodo}</td>
+                <td>${formatMoney(valorCuota)}</td> <td style="color: #ef4444; font-weight: 700;">${formatMoney(montoEnMora)}</td> <td style="text-align: center;"><span class="badge ${badgeClass}">${cuotasAtrasadas}</span></td> <td style="text-align: center;">${fechaHtml}</td> <td>
+                    <button class="btn btn-sm btn-success" 
+                            onclick="cobrarClienteAdmin(${cliente.prestamo_id}, ${montoEnMora})">
+                        <i class="fas fa-hand-holding-usd"></i> Cobrar
+                    </button>
+                </td>
+            </tr>
+        `;
+      }).join('');
+    }
+
+    // 3. Función especial para abrir el modal de cobro desde la tabla de pendientes
+    function cobrarClienteAdmin(prestamoId, montoSugerido) {
+      // Abrir el modal de pago existente
+      openModal('modalPago');
+
+      // Esperar un momento a que el modal se renderice y cargue los préstamos
+      setTimeout(() => {
+        const select = document.getElementById('prestamo_pago');
+
+        // Seleccionar el préstamo en el select
+        select.value = prestamoId;
+
+        // Forzar el evento 'change' para que se llene la info del cliente (nombre, saldo, etc.)
+        const event = new Event('change');
+        select.dispatchEvent(event);
+
+        // Sobreescribir el monto con la deuda total (Monto en Mora)
+        // Usamos un segundo timeout pequeño para asegurar que el 'change' terminó
+        setTimeout(() => {
+          if (montoSugerido) {
+            document.getElementById('monto_pagado').value = montoSugerido;
+          }
+        }, 200);
+
+      }, 300); // Tiempo para asegurar que openModal cargó los selects
+    }
+  </script>
 
 </body>
 

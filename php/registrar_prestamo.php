@@ -61,7 +61,8 @@ $saldo_inicial = $monto_total - $primer_descuento;
 
 
 // ❗ NUEVO: OBTENER SALDO DISPONIBLE Y VALIDAR
-$sql_saldo = "SELECT saldo_actual FROM caja LIMIT 1";
+$sql_saldo = "SELECT saldo_actual FROM caja WHERE id = 1"; // <--- OJO AQUÍ
+
 $result_saldo = mysqli_query($conexion, $sql_saldo);
 $saldo_disponible = 0;
 

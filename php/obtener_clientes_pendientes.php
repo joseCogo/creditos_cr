@@ -3,22 +3,21 @@ header('Content-Type: application/json');
 include("conexion.php");
 
 try {
-    // Obtener la fecha actual
     $fecha_actual = date('Y-m-d');
     
-    // Consulta para obtener préstamos activos con información del cliente
+    // 1. Obtener préstamos activos
     $sql = "SELECT 
                 p.id as prestamo_id,
                 p.cliente_id,
-                p.cuota_diaria,
+                p.cuota_diaria as valor_cuota, 
                 p.saldo_pendiente,
-                p.estado,
+                p.periodicidad,
                 p.fecha_inicio,
+                p.monto_total,
                 c.cedula,
                 c.nombre as cliente_nombre,
                 c.telefono,
-                c.direccion,
-                DATEDIFF(CURDATE(), p.fecha_inicio) as dias_transcurridos
+                c.direccion
             FROM prestamos p
             INNER JOIN clientes c ON p.cliente_id = c.id
             WHERE p.estado = 'activo' AND p.saldo_pendiente > 0
@@ -26,83 +25,87 @@ try {
     
     $resultado = mysqli_query($conexion, $sql);
     
-    if (!$resultado) {
-        throw new Exception("Error en la consulta: " . mysqli_error($conexion));
-    }
-    
-    $clientes_pendientes = [];
+    $clientes_atrasados = [];
     
     while ($prestamo = mysqli_fetch_assoc($resultado)) {
-        // Verificar si el cliente ha pagado HOY
-        $sql_pagos_hoy = "SELECT 
-                            COALESCE(SUM(monto_pagado), 0) as total_pagado_hoy
-                          FROM pagos 
-                          WHERE prestamo_id = ? 
-                          AND DATE(fecha_pago) = ?";
         
-        $stmt = mysqli_prepare($conexion, $sql_pagos_hoy);
-        mysqli_stmt_bind_param($stmt, "is", $prestamo['prestamo_id'], $fecha_actual);
+        // 2. Definir días del periodo
+        $dias_periodo = 1; // Default diario
+        if ($prestamo['periodicidad'] === 'semanal') $dias_periodo = 7;
+        if ($prestamo['periodicidad'] === 'quincenal') $dias_periodo = 15;
+
+        // 3. Obtener PAGOS REALES (Lo necesitamos para calcular la próxima fecha)
+        $sql_pagos = "SELECT COALESCE(SUM(monto_pagado), 0) as total_pagado FROM pagos WHERE prestamo_id = ?";
+        $stmt = mysqli_prepare($conexion, $sql_pagos);
+        mysqli_stmt_bind_param($stmt, "i", $prestamo['prestamo_id']);
         mysqli_stmt_execute($stmt);
-        $result_pagos = mysqli_stmt_get_result($stmt);
-        $pago_hoy = mysqli_fetch_assoc($result_pagos);
+        $pago_data = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+        $total_pagado_real = floatval($pago_data['total_pagado']);
+
+        // --- A. CALCULAR PRÓXIMA FECHA DE PAGO (Lógica Nueva) ---
+        // Calculamos cuántas cuotas enteras ha cubierto el dinero pagado.
+        // Ejemplo: Si cuota es 100 y pagó 250, cubrió 2 cuotas. Va por la 3.
+        $cuotas_pagadas_completas = floor($total_pagado_real / floatval($prestamo['valor_cuota']));
         
-        $total_pagado_hoy = floatval($pago_hoy['total_pagado_hoy']);
-        $cuota_diaria = floatval($prestamo['cuota_diaria']);
+        // Calculamos los días a sumar desde la fecha de inicio
+        $dias_a_sumar = $cuotas_pagadas_completas * $dias_periodo;
         
-        // Si NO ha pagado hoy O si pagó menos de la cuota, agregar a pendientes
-        if ($total_pagado_hoy < $cuota_diaria) {
-            // Calcular días de mora (días sin pagar)
-            $sql_ultimo_pago = "SELECT MAX(DATE(fecha_pago)) as ultimo_pago 
-                               FROM pagos 
-                               WHERE prestamo_id = ?";
+        $fecha_obj = new DateTime($prestamo['fecha_inicio']);
+        $fecha_obj->modify("+$dias_a_sumar days");
+        $proximo_pago = $fecha_obj->format('Y-m-d');
+        // -------------------------------------------------------
+
+        // --- B. CALCULAR SI ESTÁ ATRASADO (Tu Lógica Original) ---
+        
+        // Calcular tiempo transcurrido para saber cuánto DEBERÍA haber pagado
+        $fecha_inicio = new DateTime($prestamo['fecha_inicio']);
+        $fecha_hoy = new DateTime($fecha_actual);
+        $diferencia = $fecha_inicio->diff($fecha_hoy);
+        $dias_transcurridos = $diferencia->days;
+
+        // Si la fecha inicio es futuro, saltamos
+        if ($fecha_hoy < $fecha_inicio) continue;
+
+        // Fórmula de cuotas esperadas por tiempo
+        $ciclos_pasados = floor($dias_transcurridos / $dias_periodo);
+        $cuotas_esperadas = 1 + $ciclos_pasados; 
+
+        // Calcular dinero esperado
+        $monto_esperado = $cuotas_esperadas * floatval($prestamo['valor_cuota']);
+        
+        // Validar tope
+        if ($monto_esperado > $prestamo['monto_total']) {
+            $monto_esperado = floatval($prestamo['monto_total']);
+        }
+
+        // Determinar si está atrasado (Deuda > 0)
+        if ($total_pagado_real < ($monto_esperado - 100)) {
             
-            $stmt_ultimo = mysqli_prepare($conexion, $sql_ultimo_pago);
-            mysqli_stmt_bind_param($stmt_ultimo, "i", $prestamo['prestamo_id']);
-            mysqli_stmt_execute($stmt_ultimo);
-            $result_ultimo = mysqli_stmt_get_result($stmt_ultimo);
-            $ultimo_pago_data = mysqli_fetch_assoc($result_ultimo);
+            $deuda_mora = $monto_esperado - $total_pagado_real;
             
-            $dias_mora = 0;
-            
-            if ($ultimo_pago_data['ultimo_pago']) {
-                // Calcular días desde el último pago
-                $fecha_ultimo_pago = new DateTime($ultimo_pago_data['ultimo_pago']);
-                $fecha_hoy = new DateTime($fecha_actual);
-                $diferencia = $fecha_hoy->diff($fecha_ultimo_pago);
-                $dias_mora = $diferencia->days;
-            } else {
-                // Si nunca ha pagado, contar desde la fecha de inicio
-                $fecha_inicio = new DateTime($prestamo['fecha_inicio']);
-                $fecha_hoy = new DateTime($fecha_actual);
-                $diferencia = $fecha_hoy->diff($fecha_inicio);
-                $dias_mora = $diferencia->days;
-            }
-            
-            // Agregar información adicional
-            $cliente_pendiente = [
+            // Calcular número de cuotas atrasadas
+            $cuotas_atrasadas = ceil($deuda_mora / $prestamo['valor_cuota']);
+
+            $clientes_atrasados[] = [
                 'prestamo_id' => $prestamo['prestamo_id'],
-                'cliente_id' => $prestamo['cliente_id'],
                 'cedula' => $prestamo['cedula'],
                 'cliente_nombre' => $prestamo['cliente_nombre'],
                 'telefono' => $prestamo['telefono'],
-                'direccion' => $prestamo['direccion'],
-                'cuota_diaria' => $prestamo['cuota_diaria'],
-                'saldo_pendiente' => $prestamo['saldo_pendiente'],
-                'estado' => $prestamo['estado'],
-                'dias_mora' => $dias_mora,
-                'pagado_hoy' => $total_pagado_hoy,
-                'falta_pagar' => $cuota_diaria - $total_pagado_hoy
+                'valor_cuota' => $prestamo['valor_cuota'],
+                'falta_pagar' => $deuda_mora,
+                'saldo_total' => $prestamo['saldo_pendiente'],
+                'cuotas_atrasadas' => $cuotas_atrasadas,
+                'periodicidad' => ucfirst($prestamo['periodicidad']),
+                'proximo_pago' => $proximo_pago // <--- Enviamos la nueva fecha calculada
             ];
-            
-            $clientes_pendientes[] = $cliente_pendiente;
         }
     }
     
     echo json_encode([
         'success' => true,
-        'clientes' => $clientes_pendientes,
+        'clientes' => $clientes_atrasados,
         'fecha_consulta' => $fecha_actual,
-        'total_pendientes' => count($clientes_pendientes)
+        'total_pendientes' => count($clientes_atrasados)
     ]);
     
 } catch (Exception $e) {

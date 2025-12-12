@@ -42,13 +42,13 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
             <li class="menu-item">
                 <a href="#" class="menu-link" onclick="showSection('pagos')">
                     <i class="fas fa-receipt"></i>
-                    <span>Pagos Diarios</span>
+                    <span>Pagos</span>
                 </a>
             </li>
             <li class="menu-item">
                 <a href="#" class="menu-link" onclick="showSection('clientes-pendientes')">
                     <i class="fas fa-clock"></i>
-                    <span>Pendientes Hoy</span>
+                    <span>Pendientes</span>
                 </a>
             </li>
         </ul>
@@ -115,7 +115,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
             <section id="pagos" class="section">
                 <div class="table-container">
                     <div class="table-header">
-                        <h3>Registro de Pagos Diarios</h3>
+                        <h3>Registro de Pagos</h3>
                         <div class="search-box">
                             <input type="date" class="search-input" id="fechaPago" onchange="cargarPagos()">
                             <button class="btn btn-success" onclick="openModal('modalPago')">
@@ -151,7 +151,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
             <div id="clientes-pendientes" class="section">
                 <div class="table-container">
                     <div class="table-header">
-                        <h3>Clientes con Pagos Pendientes Hoy</h3>
+                        <h3> Cuotas Atrasadas</h3>
                         <div class="search-box">
                             <input type="text" class="search-input" id="buscarPendiente"
                                 placeholder="Buscar por nombre o cédula..."
@@ -168,17 +168,17 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                                 <tr>
                                     <th>Cédula</th>
                                     <th>Cliente</th>
-                                    <th>Teléfono</th>
-                                    <th>Cuota Diaria</th>
-                                    <th>Falta Pagar</th>
-                                    <th>Saldo Total</th>
-                                    <th>Días Mora</th>
+                                    <th>Frecuencia</th>
+                                    <th>Valor Cuota</th>
+                                    <th>Monto en Mora</th>
+                                    <th>Cuotas Atrasadas</th>
+                                    <th>Próximo Pago</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-pendientes">
                                 <tr>
-                                    <td colspan="9" style="text-align: center;">Cargando información...</td>
+                                    <td colspan="7" style="text-align: center;">Cargando información...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -978,67 +978,76 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                         // Guardar datos globalmente
                         clientesPendientesData = data.clientes || [];
 
-                        // Actualizar información de fecha y total
+                        // Actualizar información de fecha
                         if (data.fecha_consulta) {
                             document.getElementById('fecha-pendientes').textContent = data.fecha_consulta;
                         }
 
-                        // Renderizar tabla
                         renderizarClientesPendientes();
                     } catch (error) {
                         console.error('Error:', error);
                         document.getElementById('tabla-pendientes').innerHTML =
-                            '<tr><td colspan="9" style="text-align: center; color: red;">Error al cargar pendientes</td></tr>';
+                            '<tr><td colspan="7" style="text-align: center; color: red;">Error al cargar pendientes</td></tr>';
                     }
                 }
 
                 function renderizarClientesPendientes() {
                     const tbody = document.getElementById('tabla-pendientes');
-
-                    // Aplicar filtro de búsqueda
                     const busqueda = document.getElementById('buscarPendiente')?.value.toLowerCase() || '';
+
                     const clientesFiltrados = clientesPendientesData.filter(cliente =>
                         cliente.cliente_nombre.toLowerCase().includes(busqueda) ||
                         cliente.cedula.toLowerCase().includes(busqueda)
                     );
 
-                    // Actualizar contador de pendientes
                     document.getElementById('total-pendientes').textContent = clientesFiltrados.length;
 
                     if (clientesFiltrados.length === 0) {
-                        const mensaje = busqueda ?
-                            'No se encontraron clientes con ese criterio' :
-                            '✓ ¡Excelente! No hay clientes pendientes de pago hoy';
-                        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #10b981; font-weight: 600;">${mensaje}</td></tr>`;
+                        const mensaje = busqueda ? 'No se encontraron clientes' : '✓ ¡Excelente! No hay clientes con cuotas atrasadas';
+                        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #10b981; font-weight: 600; padding: 20px;">${mensaje}</td></tr>`;
                         return;
                     }
 
                     tbody.innerHTML = clientesFiltrados.map(cliente => {
-                        const diasMora = parseInt(cliente.dias_mora);
-                        const moraBadge = diasMora > 0 ?
-                            `<span class="badge badge-danger">${diasMora} día${diasMora > 1 ? 's' : ''}</span>` :
-                            '<span class="badge badge-success">Al día</span>';
+                        const cuotasAtrasadas = parseInt(cliente.cuotas_atrasadas);
+                        const periodicidad = cliente.periodicidad || 'Diario';
+                        const valorCuota = parseFloat(cliente.valor_cuota);
+                        const montoEnMora = parseFloat(cliente.falta_pagar);
 
-                        const pagadoHoy = parseFloat(cliente.pagado_hoy);
-                        const faltaPagar = parseFloat(cliente.falta_pagar);
+                        // Lógica de Fecha
+                        let fechaHtml = '-';
+                        if (cliente.proximo_pago) {
+                            const fechaObj = new Date(cliente.proximo_pago + 'T00:00:00');
+                            const hoy = new Date();
+                            hoy.setHours(0, 0, 0, 0);
+                            const colorFecha = fechaObj < hoy ? '#ef4444' : '#10b981';
+                            const fechaTexto = fechaObj.toLocaleDateString('es-CO', {
+                                day: 'numeric',
+                                month: 'short'
+                            });
+                            fechaHtml = `<span style="font-weight:700; color:${colorFecha};">${fechaTexto}</span>`;
+                        }
 
-                        // Color de la fila según el estado
-                        const rowClass = diasMora > 3 ? 'style="background-color: #fee2e2;"' :
-                            diasMora > 0 ? 'style="background-color: #fef3c7;"' : '';
+                        let badgeClass = cuotasAtrasadas >= 3 ? 'badge-danger' : 'badge-warning';
+                        let rowStyle = cuotasAtrasadas >= 3 ? 'background-color: #fee2e2;' : 'background-color: #fef3c7;';
+
+                        let badgePeriodo = '';
+                        if (periodicidad === 'Semanal') badgePeriodo = '<span class="badge badge-info">Semanal</span>';
+                        else if (periodicidad === 'Quincenal') badgePeriodo = '<span class="badge badge-success">Quincenal</span>';
+                        else badgePeriodo = '<span class="badge" style="background:#6b7280; color:white;">Diario</span>';
 
                         return `
-            <tr ${rowClass}>
+            <tr style="${rowStyle}">
                 <td>${cliente.cedula}</td>
                 <td style="font-weight: 600;">${cliente.cliente_nombre}</td>
-                <td>${cliente.telefono || 'N/A'}</td>
-                <td>${formatMoney(parseFloat(cliente.cuota_diaria))}</td>
-                <td style="color: #ef4444; font-weight: 600;">
-                    ${formatMoney(faltaPagar)}
-                </td>
-                <td>${formatMoney(parseFloat(cliente.saldo_pendiente))}</td>
-                <td>${moraBadge}</td>
+                <td>${badgePeriodo}</td>
+                <td>${formatMoney(valorCuota)}</td>
+                <td style="color: #ef4444; font-weight: 700;">${formatMoney(montoEnMora)}</td>
+                <td style="text-align: center;"><span class="badge ${badgeClass}">${cuotasAtrasadas}</span></td>
+                <td style="text-align: center;">${fechaHtml}</td>
                 <td>
-                    <button class="btn btn-sm btn-success" onclick="cobrarCliente(${cliente.prestamo_id}, ${cliente.cuota_diaria})" title="Registrar pago de este cliente">
+                    <button class="btn btn-sm btn-success" 
+                            onclick="cobrarCliente(${cliente.prestamo_id}, ${montoEnMora})">
                         <i class="fas fa-hand-holding-usd"></i> Cobrar
                     </button>
                 </td>
@@ -1051,26 +1060,32 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                     renderizarClientesPendientes();
                 }
 
-                function cobrarCliente(prestamoId, cuotaDiaria = null) {
-                    // Primero cambiar a la sección de pagos
+                // Función modificada para aceptar el monto sugerido (mora total)
+                function cobrarCliente(prestamoId, montoSugerido = null) {
+                    // 1. Ir a la sección de pagos
                     showSection('pagos');
 
-                    // Esperar un momento antes de abrir el modal
+                    // 2. Esperar un poco y abrir el modal
                     setTimeout(() => {
                         openModal('modalPago');
 
-                        // Esperar a que se cargue el select
+                        // 3. Seleccionar el préstamo en el dropdown
                         setTimeout(() => {
                             const select = document.getElementById('prestamo_pago');
                             select.value = prestamoId;
 
-                            // Si se proporciona la cuota, llenarla directamente
-                            if (cuotaDiaria) {
-                                document.getElementById('monto_pagado').value = cuotaDiaria;
-                            } else {
-                                // Disparar el evento change para auto-llenar el monto
-                                const event = new Event('change');
-                                select.dispatchEvent(event);
+                            // Disparamos el evento 'change' para que el sistema cargue la info del préstamo
+                            // (Nombre, saldo total, etc.)
+                            const event = new Event('change');
+                            select.dispatchEvent(event);
+
+                            // 4. SOBREESCRIBIR el monto a pagar
+                            // El evento 'change' pone la cuota normal por defecto. 
+                            // Nosotros queremos poner el total de la mora (montoSugerido).
+                            if (montoSugerido) {
+                                setTimeout(() => {
+                                    document.getElementById('monto_pagado').value = montoSugerido;
+                                }, 200); // Pequeño delay para asegurar que sobreescriba al default
                             }
                         }, 300);
                     }, 100);
@@ -1093,8 +1108,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                 }
 
                 // Configuración de columnas para cada tabla
-                const tableRules = {
-                };
+                const tableRules = {};
 
                 // Función general para ocultar columnas
                 function applyResponsiveTables() {
