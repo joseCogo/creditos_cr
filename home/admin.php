@@ -320,110 +320,111 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         </div>
 
         <!-- GRÁFICOS -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; margin-top: 30px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 30px;">
 
-          <!-- Gráfico 1: Capital en Caja vs En la Calle -->
           <div class="table-container" style="padding: 20px;">
-            <h3 style="margin-bottom: 15px;">
+            <h3 style="margin-bottom: 15px; font-size: 1.1rem;">
               <i class="fas fa-chart-bar"></i> Distribución de Capital
             </h3>
-            <canvas id="graficoCapital" style="max-height: 280px;"></canvas>
+            <div style="position: relative; height: 300px; width: 100%;">
+              <canvas id="graficoCapital"></canvas>
+            </div>
           </div>
 
-          <!-- Gráfico 2: Ingresos últimos 7 días -->
           <div class="table-container" style="padding: 20px;">
-            <h3 style="margin-bottom: 15px;">
+            <h3 style="margin-bottom: 15px; font-size: 1.1rem;">
               <i class="fas fa-chart-line"></i> Ingresos Últimos 7 Días
             </h3>
-            <canvas id="graficoIngresos7dias" style="max-height: 280px;"></canvas>
+            <div style="position: relative; height: 300px; width: 100%;">
+              <canvas id="graficoIngresos7dias"></canvas>
+            </div>
           </div>
         </div>
 
-        <!-- Gráfico 3: Estado de Préstamos (Ancho completo) -->
-        <div class="table-container" style="padding: 20px; margin-top: 20px; max-width: 500px; margin-left: auto; margin-right: auto;">
-          <h3 style="margin-bottom: 15px; text-align: center;">
+        <div class="table-container" style="padding: 20px; margin-top: 20px; width: 100%; max-width: 500px; margin-left: auto; margin-right: auto;">
+          <h3 style="margin-bottom: 15px; text-align: center; font-size: 1.1rem;">
             <i class="fas fa-chart-pie"></i> Estado de Préstamos
           </h3>
-          <canvas id="graficoEstadoPrestamos" style="max-height: 300px;"></canvas>
+          <div style="position: relative; height: 300px; width: 100%;">
+            <canvas id="graficoEstadoPrestamos"></canvas>
+          </div>
         </div>
 
-      </section>
+        <section id="reportes-caja" class="section">
+          <div class="table-container">
+            <div class="table-header">
+              <h3><i class="fas fa-file-invoice-dollar"></i> Movimientos de Caja</h3>
+              <div class="search-box">
+                <select class="search-input" id="tipoReporteCaja" onchange="cargarReporteCaja()">
+                  <option value="diario">Diario</option>
+                  <option value="semanal">Semanal</option>
+                  <option value="mensual">Mensual</option>
+                  <option value="personalizado">Personalizado</option>
+                </select>
 
-      <section id="reportes-caja" class="section">
-        <div class="table-container">
-          <div class="table-header">
-            <h3><i class="fas fa-file-invoice-dollar"></i> Movimientos de Caja</h3>
-            <div class="search-box">
-              <select class="search-input" id="tipoReporteCaja" onchange="cargarReporteCaja()">
-                <option value="diario">Diario</option>
-                <option value="semanal">Semanal</option>
-                <option value="mensual">Mensual</option>
-                <option value="personalizado">Personalizado</option>
-              </select>
+                <div id="fechasPersonalizadas" style="display: none; gap: 10px;">
+                  <input type="date" class="search-input" id="fechaInicioCaja">
+                  <input type="date" class="search-input" id="fechaFinCaja">
+                </div>
 
-              <div id="fechasPersonalizadas" style="display: none; gap: 10px;">
-                <input type="date" class="search-input" id="fechaInicioCaja">
-                <input type="date" class="search-input" id="fechaFinCaja">
+                <button class="btn btn-primary" onclick="cargarReporteCaja()">
+                  <i class="fas fa-sync"></i> Generar
+                </button>
               </div>
+            </div>
 
-              <button class="btn btn-primary" onclick="cargarReporteCaja()">
-                <i class="fas fa-sync"></i> Generar
+            <div class="cards-grid" style="margin: 20px 0;">
+              <div class="card">
+                <div class="card-title">Saldo Inicial</div>
+                <div class="card-value" id="reporteSaldoInicial" style="color: #6b7280;">$0</div>
+              </div>
+              <div class="card">
+                <div class="card-title">Ingresos</div>
+                <div class="card-value" id="reporteTotalIngresos" style="color: #10b981;">$0</div>
+              </div>
+              <div class="card">
+                <div class="card-title">Egresos</div>
+                <div class="card-value" id="reporteTotalEgresos" style="color: #ef4444;">$0</div>
+              </div>
+              <div class="card">
+                <div class="card-title">Saldo Final</div>
+                <div class="card-value" id="reporteSaldoFinal" style="color: #667eea;">$0</div>
+              </div>
+            </div>
+
+            <div id="contenedorReporteCaja">
+              <p style="text-align: center; padding: 40px; color: #6b7280;">Selecciona un reporte</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="usuarios" class="section">
+          <div class="table-container">
+            <div class="table-header">
+              <h3>Gestión de Usuarios</h3>
+              <button class="btn btn-primary" onclick="openModal('modalUsuario')">
+                <i class="fas fa-plus"></i> Nuevo Usuario
               </button>
             </div>
-          </div>
-
-          <div class="cards-grid" style="margin: 20px 0;">
-            <div class="card">
-              <div class="card-title">Saldo Inicial</div>
-              <div class="card-value" id="reporteSaldoInicial" style="color: #6b7280;">$0</div>
-            </div>
-            <div class="card">
-              <div class="card-title">Ingresos</div>
-              <div class="card-value" id="reporteTotalIngresos" style="color: #10b981;">$0</div>
-            </div>
-            <div class="card">
-              <div class="card-title">Egresos</div>
-              <div class="card-value" id="reporteTotalEgresos" style="color: #ef4444;">$0</div>
-            </div>
-            <div class="card">
-              <div class="card-title">Saldo Final</div>
-              <div class="card-value" id="reporteSaldoFinal" style="color: #667eea;">$0</div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="usuariosTable">
+                  <tr>
+                    <td colspan="4" style="text-align: center;">Cargando usuarios...</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
-
-          <div id="contenedorReporteCaja">
-            <p style="text-align: center; padding: 40px; color: #6b7280;">Selecciona un reporte</p>
-          </div>
-        </div>
-      </section>
-
-      <section id="usuarios" class="section">
-        <div class="table-container">
-          <div class="table-header">
-            <h3>Gestión de Usuarios</h3>
-            <button class="btn btn-primary" onclick="openModal('modalUsuario')">
-              <i class="fas fa-plus"></i> Nuevo Usuario
-            </button>
-          </div>
-          <div class="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>Email</th>
-                  <th>Rol</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="usuariosTable">
-                <tr>
-                  <td colspan="4" style="text-align: center;">Cargando usuarios...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+        </section>
     </div>
   </main>
 
@@ -1758,7 +1759,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true,
+          maintainAspectRatio: false,
           plugins: {
             legend: {
               display: false
@@ -1818,7 +1819,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true,
+          maintainAspectRatio: false,
           plugins: {
             legend: {
               display: false
@@ -1873,7 +1874,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true,
+          maintainAspectRatio: false,
           plugins: {
             legend: {
               position: 'bottom',
