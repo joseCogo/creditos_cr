@@ -1,89 +1,57 @@
 <?php
+// archivo: php/obtener_pagos.php
 header('Content-Type: application/json');
+error_reporting(0);
+ini_set('display_errors', 0);
+
+session_start();
 include("conexion.php");
+include("verificar_sesion.php");
 
-$prestamo_id = $_GET['prestamo_id'] ?? '';
-$fecha = $_GET['fecha'] ?? '';
+$fecha_filtro = $_GET['fecha'] ?? '';
 
-/* ===========================================================
-   CONSULTA POR PRESTAMO ESPECÍFICO
-   =========================================================== */
-if (!empty($prestamo_id)) {
-
-    $sql = "SELECT pg.*, 
-                c.nombre as cliente_nombre, 
-                c.cedula, 
-                p.cuota_diaria, 
-                u.nombre as cobrador,
-                b.numero_boleta
+try {
+    $sql = "SELECT 
+                pg.id,
+                pg.fecha_pago,
+                pg.monto_pagado,
+                pg.metodo_pago,
+                pg.observacion,
+                c.nombre as cliente_nombre,
+                u.nombre as cobrador
             FROM pagos pg
             INNER JOIN prestamos p ON pg.prestamo_id = p.id
             INNER JOIN clientes c ON p.cliente_id = c.id
-            LEFT JOIN usuarios u ON pg.usuario_id = u.id
-            LEFT JOIN boletas_prestamos b ON p.id = b.prestamo_id
-            WHERE pg.prestamo_id = ?
-            ORDER BY pg.fecha_pago DESC";
+            LEFT JOIN usuarios u ON pg.usuario_id = u.id";
 
-    $stmt = mysqli_prepare($conexion, $sql);
-    mysqli_stmt_bind_param($stmt, "i", $prestamo_id);
-    mysqli_stmt_execute($stmt);
-    $resultado = mysqli_stmt_get_result($stmt);
+    // Aplicar filtro de fecha si existe
+    if (!empty($fecha_filtro)) {
+        $sql .= " WHERE DATE(pg.fecha_pago) = '" . mysqli_real_escape_string($conexion, $fecha_filtro) . "'";
+    }
 
-/* ===========================================================
-   CONSULTA POR FECHA ESPECÍFICA
-   =========================================================== */
-} else if (!empty($fecha)) {
-
-    $sql = "SELECT pg.*, 
-                c.nombre as cliente_nombre, 
-                c.cedula, 
-                p.cuota_diaria, 
-                u.nombre as cobrador,
-                b.numero_boleta
-            FROM pagos pg
-            INNER JOIN prestamos p ON pg.prestamo_id = p.id
-            INNER JOIN clientes c ON p.cliente_id = c.id
-            LEFT JOIN usuarios u ON pg.usuario_id = u.id
-            LEFT JOIN boletas_prestamos b ON p.id = b.prestamo_id
-            WHERE DATE(pg.fecha_pago) = ?
-            ORDER BY pg.fecha_pago DESC";
-
-    $stmt = mysqli_prepare($conexion, $sql);
-    mysqli_stmt_bind_param($stmt, "s", $fecha);
-    mysqli_stmt_execute($stmt);
-    $resultado = mysqli_stmt_get_result($stmt);
-
-/* ===========================================================
-   CONSULTA GENERAL (ULTIMOS 100)
-   =========================================================== */
-} else {
-
-    $sql = "SELECT pg.*, 
-                c.nombre as cliente_nombre, 
-                c.cedula, 
-                p.cuota_diaria, 
-                u.nombre as cobrador,
-                b.numero_boleta
-            FROM pagos pg
-            INNER JOIN prestamos p ON pg.prestamo_id = p.id
-            INNERJOIN clientes c ON p.cliente_id = c.id
-            LEFT JOIN usuarios u ON pg.usuario_id = u.id
-            LEFT JOIN boletas_prestamos b ON p.id = b.prestamo_id
-            ORDER BY pg.fecha_pago DESC
-            LIMIT 100";
+    $sql .= " ORDER BY pg.fecha_pago DESC, pg.id DESC";
 
     $resultado = mysqli_query($conexion, $sql);
+
+    if (!$resultado) {
+        throw new Exception("Error SQL: " . mysqli_error($conexion));
+    }
+
+    $pagos = [];
+    while ($row = mysqli_fetch_assoc($resultado)) {
+        // Asegurar tipos numéricos
+        $row['id'] = (int)$row['id'];
+        $row['monto_pagado'] = (float)$row['monto_pagado'];
+        
+        $pagos[] = $row;
+    }
+
+    echo json_encode($pagos);
+
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['error' => true, 'message' => $e->getMessage()]);
 }
 
-/* ===========================================================
-   FORMAR JSON DE RESPUESTA
-   =========================================================== */
-
-$pagos = [];
-while ($row = mysqli_fetch_assoc($resultado)) {
-    $pagos[] = $row;
-}
-
-echo json_encode($pagos);
 mysqli_close($conexion);
 ?>

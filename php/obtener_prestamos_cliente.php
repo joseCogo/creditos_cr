@@ -25,19 +25,16 @@ if (!$cliente) {
     exit;
 }
 
-// 2. Obtener préstamos activos del cliente CON CÁLCULO EN VIVO
-// Usamos una subconsulta (SELECT SUM...) para obtener lo pagado real
+// 2. Obtener préstamos activos
+// Eliminadas columnas inexistentes: cuotas, cuota_diaria
 $sql_prestamos = "SELECT 
                     p.id, 
                     p.monto, 
                     p.interes, 
-                    p.cuotas, 
-                    p.cuota_diaria, 
                     p.fecha_inicio, 
-                    p.fecha_fin, 
+                    p.fecha_fin, -- Fecha último movimiento 
                     p.monto_total, 
                     p.estado,
-                    -- Subconsulta para sumar todos los pagos de este préstamo
                     (SELECT COALESCE(SUM(monto_pagado), 0) FROM pagos WHERE prestamo_id = p.id) as total_pagado_real
                   FROM prestamos p
                   WHERE p.cliente_id = ? AND p.estado IN ('activo', 'mora')
@@ -51,13 +48,12 @@ $result_prestamos = mysqli_stmt_get_result($stmt_prestamos);
 $prestamos = [];
 while ($row = mysqli_fetch_assoc($result_prestamos)) {
     
-    // 🔥 CÁLCULO: Saldo = Monto Total - Total Pagado Real
+    // Cálculo en vivo del saldo
     $monto_total = floatval($row['monto_total']);
     $pagado_real = floatval($row['total_pagado_real']);
     $saldo_calculado = $monto_total - $pagado_real;
 
-    // Inyectamos el saldo calculado en el array, ignorando lo que diga la columna saldo_pendiente
-    $row['saldo_pendiente'] = max(0, $saldo_calculado); // Evitar negativos
+    $row['saldo_pendiente'] = max(0, $saldo_calculado);
 
     $prestamos[] = $row;
 }

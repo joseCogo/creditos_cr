@@ -1,86 +1,61 @@
 <?php
+// archivo: php/obtener_prestamos.php
 header('Content-Type: application/json');
+// Desactivar errores visuales para no romper el JSON
 error_reporting(0);
 ini_set('display_errors', 0);
+
 include("conexion.php");
+include("verificar_sesion.php");
 
-$estado = $_GET['estado'] ?? '';
+$estado_filtro = $_GET['estado'] ?? '';
 
-/* LOGICA DE CÁLCULO EN VIVO + AUTOCORRECCIÓN (SELF-HEALING):
-   1. Traemos la suma real de pagos.
-   2. Traemos el saldo que está guardado en BD.
-   3. Si son diferentes, actualizamos la BD silenciosamente.
-*/
+try {
+    // Consulta simplificada: Ya no pedimos cuotas ni periodicidad
+    $sql = "SELECT 
+                p.id,
+                p.cliente_id,
+                p.monto,        -- Capital prestado
+                p.interes,      -- Porcentaje
+                p.monto_total,  -- Deuda total
+                p.saldo_pendiente,
+                p.estado,
+                p.fecha_inicio,
+                p.fecha_fin,    -- Último movimiento
+                c.nombre as cliente_nombre,
+                c.cedula as cliente_cedula,
+                c.telefono
+            FROM prestamos p
+            INNER JOIN clientes c ON p.cliente_id = c.id";
 
-$sql = "SELECT 
-            p.id,
-            p.cliente_id,
-            p.monto,
-            p.interes,
-            p.cuotas,
-            p.cuota_diaria,
-            p.fecha_inicio,
-            p.monto_total,
-            p.saldo_pendiente, -- IMPORTANTE: Traer este campo para comparar
-            p.estado,
-            -- Columna auxiliar con la suma real de pagos
-            (SELECT COALESCE(SUM(monto_pagado), 0) FROM pagos WHERE prestamo_id = p.id) as total_pagado_real,
-            c.nombre as cliente_nombre,
-            c.cedula as cliente_cedula
-        FROM prestamos p
-        INNER JOIN clientes c ON p.cliente_id = c.id";
-
-// Aplicar filtro de estado si existe
-if (!empty($estado)) {
-    $sql .= " WHERE p.estado = '$estado'";
-}
-
-$sql .= " ORDER BY p.id DESC";
-
-$result = mysqli_query($conexion, $sql);
-
-if (!$result) {
-    echo json_encode([]);
-    exit;
-}
-
-$prestamos = [];
-
-while ($row = mysqli_fetch_assoc($result)) {
-    
-    // 1. Obtener datos para el cálculo
-    $monto_total = floatval($row['monto_total']);
-    $total_pagado = floatval($row['total_pagado_real']);
-    $saldo_en_bd = floatval($row['saldo_pendiente']); // El valor que está en la BD ahora mismo
-    
-    // 2. Calcular el saldo real matemático
-    $saldo_real = $monto_total - $total_pagado;
-    $saldo_real = max(0, $saldo_real); // Evitamos números negativos
-    
-    // 3. --- AQUÍ OCURRE LA AUTOCORRECCIÓN ---
-    // Comparamos el saldo de la BD con el saldo real calculado.
-    // Usamos abs() > 10 para dar un pequeño margen de error por decimales, pero detectará cambios grandes.
-    if (abs($saldo_en_bd - $saldo_real) > 10) {
-        
-        // ¡DETECTAMOS UN ERROR EN LA BD! -> Lo corregimos ahora mismo.
-        $id_prestamo = $row['id'];
-        
-        // Ejecutamos el UPDATE directo a la base de datos
-        $update_sql = "UPDATE prestamos SET saldo_pendiente = $saldo_real WHERE id = $id_prestamo";
-        mysqli_query($conexion, $update_sql);
-        
-        // Actualizamos el valor en la fila actual para que el usuario ya lo vea corregido en pantalla
-        $row['saldo_pendiente'] = $saldo_real;
-        
-    } else {
-        // Si la BD estaba bien (o casi bien), simplemente mostramos el saldo calculado para exactitud visual
-        $row['saldo_pendiente'] = $saldo_real;
+    // Aplicar filtro si existe
+    if (!empty($estado_filtro)) {
+        $sql .= " WHERE p.estado = '" . mysqli_real_escape_string($conexion, $estado_filtro) . "'";
     }
 
-    $prestamos[] = $row;
+    $sql .= " ORDER BY p.id DESC";
+
+    $resultado = mysqli_query($conexion, $sql);
+
+    if (!$resultado) {
+        throw new Exception("Error SQL: " . mysqli_error($conexion));
+    }
+
+    $prestamos = [];
+    while ($row = mysqli_fetch_assoc($resultado)) {
+        // Aseguramos tipos de datos numéricos para JS
+        $row['id'] = (int)$row['id'];
+        $row['monto'] = (float)$row['monto'];
+        $row['interes'] = (float)$row['interes'];
+        $row['monto_total'] = (float)$row['monto_total'];
+        $row['saldo_pendiente'] = (float)$row['saldo_pendiente'];
+
+        $prestamos[] = $row;
+    }
+
+    echo json_encode($prestamos);
+} catch (Exception $e) {
+    // En caso de error, devolver un JSON con el error (no HTML)
+    http_response_code(500);
+    echo json_encode(['error' => true, 'message' => $e->getMessage()]);
 }
-
-echo json_encode($prestamos);
-
-mysqli_close($conexion);
-?>

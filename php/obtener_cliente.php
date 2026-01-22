@@ -1,6 +1,8 @@
-  <?php
-  header('Content-Type: application/json');
-  include("conexion.php");
+<?php
+header('Content-Type: application/json');
+session_start();
+include("conexion.php");
+include("verificar_sesion.php");
 
   if (isset($_GET['cedula'])) {
       // Si se pasa cédula, devolver solo ese cliente

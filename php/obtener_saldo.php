@@ -1,6 +1,8 @@
 <?php
 header('Content-Type: application/json');
+session_start();
 include("conexion.php");
+include("verificar_sesion.php");
 
 // CORRECCIÓN: Forzamos a leer el ID 1. No usamos LIMIT 1.
 $sql = "SELECT saldo_actual FROM caja WHERE id = 1";
