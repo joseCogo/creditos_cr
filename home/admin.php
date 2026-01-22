@@ -108,6 +108,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
     </header>
 
     <div class="content">
+
       <section id="dashboard" class="section active">
         <div class="cards-grid">
           <div class="card saldo-card">
@@ -280,7 +281,6 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
       </section>
 
       <section id="reportes" class="section">
-        <!-- Tarjetas de Resumen -->
         <div class="cards-grid" style="margin-bottom: 20px;">
           <div class="card">
             <div class="card-title">Ingresos Hoy</div>
@@ -296,7 +296,6 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           </div>
         </div>
 
-        <!-- Tabla de Actividad -->
         <div class="table-container">
           <div class="table-header">
             <h3><i class="fas fa-calendar-alt"></i> Resumen de Actividad - Últimos 7 Días</h3>
@@ -319,7 +318,6 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
           </div>
         </div>
 
-        <!-- GRÁFICOS -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 30px;">
 
           <div class="table-container" style="padding: 20px;">
@@ -349,82 +347,83 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Admin';
             <canvas id="graficoEstadoPrestamos"></canvas>
           </div>
         </div>
+      </section>
+      <section id="reportes-caja" class="section">
+        <div class="table-container">
+          <div class="table-header">
+            <h3><i class="fas fa-file-invoice-dollar"></i> Movimientos de Caja</h3>
+            <div class="search-box">
+              <select class="search-input" id="tipoReporteCaja" onchange="cargarReporteCaja()">
+                <option value="diario">Diario</option>
+                <option value="semanal">Semanal</option>
+                <option value="mensual">Mensual</option>
+                <option value="personalizado">Personalizado</option>
+              </select>
 
-        <section id="reportes-caja" class="section">
-          <div class="table-container">
-            <div class="table-header">
-              <h3><i class="fas fa-file-invoice-dollar"></i> Movimientos de Caja</h3>
-              <div class="search-box">
-                <select class="search-input" id="tipoReporteCaja" onchange="cargarReporteCaja()">
-                  <option value="diario">Diario</option>
-                  <option value="semanal">Semanal</option>
-                  <option value="mensual">Mensual</option>
-                  <option value="personalizado">Personalizado</option>
-                </select>
-
-                <div id="fechasPersonalizadas" style="display: none; gap: 10px;">
-                  <input type="date" class="search-input" id="fechaInicioCaja">
-                  <input type="date" class="search-input" id="fechaFinCaja">
-                </div>
-
-                <button class="btn btn-primary" onclick="cargarReporteCaja()">
-                  <i class="fas fa-sync"></i> Generar
-                </button>
+              <div id="fechasPersonalizadas" style="display: none; gap: 10px;">
+                <input type="date" class="search-input" id="fechaInicioCaja">
+                <input type="date" class="search-input" id="fechaFinCaja">
               </div>
-            </div>
 
-            <div class="cards-grid" style="margin: 20px 0;">
-              <div class="card">
-                <div class="card-title">Saldo Inicial</div>
-                <div class="card-value" id="reporteSaldoInicial" style="color: #6b7280;">$0</div>
-              </div>
-              <div class="card">
-                <div class="card-title">Ingresos</div>
-                <div class="card-value" id="reporteTotalIngresos" style="color: #10b981;">$0</div>
-              </div>
-              <div class="card">
-                <div class="card-title">Egresos</div>
-                <div class="card-value" id="reporteTotalEgresos" style="color: #ef4444;">$0</div>
-              </div>
-              <div class="card">
-                <div class="card-title">Saldo Final</div>
-                <div class="card-value" id="reporteSaldoFinal" style="color: #667eea;">$0</div>
-              </div>
-            </div>
-
-            <div id="contenedorReporteCaja">
-              <p style="text-align: center; padding: 40px; color: #6b7280;">Selecciona un reporte</p>
-            </div>
-          </div>
-        </section>
-
-        <section id="usuarios" class="section">
-          <div class="table-container">
-            <div class="table-header">
-              <h3>Gestión de Usuarios</h3>
-              <button class="btn btn-primary" onclick="openModal('modalUsuario')">
-                <i class="fas fa-plus"></i> Nuevo Usuario
+              <button class="btn btn-primary" onclick="cargarReporteCaja()">
+                <i class="fas fa-sync"></i> Generar
               </button>
             </div>
-            <div class="table-scroll">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Rol</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody id="usuariosTable">
-                  <tr>
-                    <td colspan="4" style="text-align: center;">Cargando usuarios...</td>
-                  </tr>
-                </tbody>
-              </table>
+          </div>
+
+          <div class="cards-grid" style="margin: 20px 0;">
+            <div class="card">
+              <div class="card-title">Saldo Inicial</div>
+              <div class="card-value" id="reporteSaldoInicial" style="color: #6b7280;">$0</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Ingresos</div>
+              <div class="card-value" id="reporteTotalIngresos" style="color: #10b981;">$0</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Egresos</div>
+              <div class="card-value" id="reporteTotalEgresos" style="color: #ef4444;">$0</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Saldo Final</div>
+              <div class="card-value" id="reporteSaldoFinal" style="color: #667eea;">$0</div>
             </div>
           </div>
-        </section>
+
+          <div id="contenedorReporteCaja">
+            <p style="text-align: center; padding: 40px; color: #6b7280;">Selecciona un reporte</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="usuarios" class="section">
+        <div class="table-container">
+          <div class="table-header">
+            <h3>Gestión de Usuarios</h3>
+            <button class="btn btn-primary" onclick="openModal('modalUsuario')">
+              <i class="fas fa-plus"></i> Nuevo Usuario
+            </button>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th>Rol</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="usuariosTable">
+                <tr>
+                  <td colspan="4" style="text-align: center;">Cargando usuarios...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
     </div>
   </main>
 
