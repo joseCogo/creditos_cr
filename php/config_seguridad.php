@@ -1,25 +1,26 @@
 <?php
 /**
  * Configuración centralizada de seguridad
- * Carga variables de entorno desde .env
+ * Carga variables de entorno desde .env SI EXISTE
  */
 
-// Cargar archivo .env
+// Cargar archivo .env (SOLO PARA LOCAL)
 function cargar_env($archivo = __DIR__ . '/../.env') {
-    if (!file_exists($archivo)) {
-        die('ERROR: Archivo .env no encontrado. Copia .env.example a .env y configura tus valores.');
-    }
-    
-    $lineas = file($archivo, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lineas as $linea) {
-        if (strpos($linea, '=') === false || strpos($linea, '#') === 0) {
-            continue;
-        }
-        list($clave, $valor) = explode('=', $linea, 2);
-        $clave = trim($clave);
-        $valor = trim($valor);
-        if (!empty($clave)) {
-            putenv("$clave=$valor");
+    // 🔥 CORRECCIÓN: Verificamos si existe. Si NO existe, simplemente seguimos 
+    // sin hacer nada (asumiendo que estamos en Producción/Render).
+    if (file_exists($archivo)) {
+        $lineas = file($archivo, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lineas as $linea) {
+            if (strpos($linea, '=') === false || strpos($linea, '#') === 0) {
+                continue;
+            }
+            list($clave, $valor) = explode('=', $linea, 2);
+            $clave = trim($clave);
+            $valor = trim($valor);
+            if (!empty($clave)) {
+                putenv("$clave=$valor");
+                $_ENV[$clave] = $valor; // Asegurar compatibilidad
+            }
         }
     }
 }
@@ -39,6 +40,7 @@ if (APP_DEBUG) {
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
 } else {
+    // EN PRODUCCIÓN: Cero errores visibles al navegador para no romper el JSON
     error_reporting(E_ALL);
     ini_set('display_errors', 0);
     ini_set('log_errors', 1);
@@ -47,7 +49,7 @@ if (APP_DEBUG) {
 
 // Crear directorio de logs si no existe
 if (!is_dir(__DIR__ . '/../logs')) {
-    mkdir(__DIR__ . '/../logs', 0755, true);
+    @mkdir(__DIR__ . '/../logs', 0755, true);
 }
 
 // Funciones de Utilidad de Seguridad
@@ -252,5 +254,4 @@ class Seguridad {
         error_log($log_message);
     }
 }
-
 ?>
