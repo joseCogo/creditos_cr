@@ -39,7 +39,7 @@
                     <div class="success-message" id="loginSuccess">
                         ¡Inicio de sesión exitoso!
                     </div>
-                    <form action="/php/login.php" method="POST">
+                    <form id="loginFormElement" onsubmit="handleLogin(event)">
                         <div class="input-group">
                             <label>Correo Electrónico</label>
                             <input type="email" name="correo" required placeholder="ejemplo@correo.com">
@@ -203,23 +203,25 @@
   const form = event.target;
   const datos = new FormData(form);
 
-  fetch("php/login.php", {
+  fetch("/php/login.php", {
     method: "POST",
     body: datos
   })
-  .then(res => res.text())
+  .then(res => res.json())
   .then(respuesta => {
-    if (respuesta.includes("dashboard")) {
-      window.location.href = respuesta;
+    if (respuesta.success) {
+      // Éxito: ir directo sin mostrar alert
+      window.location.href = respuesta.redirect;
     } else {
+      // Error: mostrar alert
       Swal.fire({
         icon: 'error',
         title: 'Error de inicio de sesión',
-        text: respuesta
+        text: respuesta.message
       });
     }
   })
-  .catch(() => {
+  .catch((error) => {
     Swal.fire({
       icon: 'error',
       title: 'Error de conexión',

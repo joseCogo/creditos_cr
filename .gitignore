@@ -1,0 +1,61 @@
+# Archivos de configuración sensibles
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vendor
+vendor/
+
+# Credenciales y configuración
+config_local.php
+settings_local.php
+000-default.conf
+
+# Caché
+cache/
+tmp/
+
+# Bases de datos y Dumps SQL
+*.db
+*.sqlite
+init.sql
+
+# Backups
+*.bak
+*.backup
+
+# --- Archivos Generados por Copilot / Documentación Interna ---
+# Scripts de prueba y seguridad locales
+test_seguridad.sh
+verify_security.sh
+
+# Archivos de estado y notas de texto
+IMPLEMENTACION_COMPLETADA.txt
+INICIO_AQUI.txt
+README_SEGURIDAD.txt
+
+# Documentación Markdown generada (instrucciones locales)
+ACTIVACION_RAPIDA.md
+CIERRE_IMPLEMENTACION.md
+DASHBOARD_FINAL.md
+ESTADO_FINAL_IMPLEMENTACION.md
+GUIA_SEGURIDAD.md
+INDICE_DOCUMENTACION.md
+INSTRUCCIONES_ACTUALIZACION_FRONTEND.md
+REFERENCIA_GIT_Y_ACTIVACION.md
+RESUMEN_SEGURIDAD_IMPLEMENTADA.md

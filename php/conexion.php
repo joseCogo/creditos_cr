@@ -1,15 +1,22 @@
 <?php
-// Configuración de base de datos usando variables de entorno
-$servidor = getenv('DB_HOST') ?: 'bcoyhnvaiydt6al37nzh-mysql.services.clever-cloud.com';
-$usuario = getenv('DB_USER') ?: 'unez0xrkrwy1djsp';
-$password = getenv('DB_PASSWORD') ?: 'PmKpV5Jhiia00h4VMnav';
-$basedatos = getenv('DB_NAME') ?: 'bcoyhnvaiydt6al37nzh';
+// Cargar configuración de seguridad
+require_once(__DIR__ . '/config_seguridad.php');
+
+// Obtener credenciales desde variables de entorno (NO hardcodeadas)
+$servidor = getenv('DB_HOST');
+$usuario = getenv('DB_USER');
+$password = getenv('DB_PASSWORD');
+$basedatos = getenv('DB_NAME');
 $puerto = getenv('DB_PORT') ?: 3306;
 
-// Mostrar información de depuración (SOLO para diagnóstico - eliminar después)
-error_log("Intentando conectar a: $servidor:$puerto");
-error_log("Usuario: $usuario");
-error_log("Base de datos: $basedatos");
+// Validar que las variables estén configuradas
+if (!$servidor || !$usuario || !$password || !$basedatos) {
+    Seguridad::log_seguro('ERROR: Variables de base de datos no configuradas', 'CRITICAL');
+    die('ERROR: Configuración de base de datos incompleta. Contacta al administrador.');
+}
+
+// Log seguro (sin exponer credenciales)
+Seguridad::log_seguro("Conectando a base de datos: $basedatos", 'INFO');
 
 // Intentar conexión con puerto específico
 $conexion = mysqli_connect($servidor, $usuario, $password, $basedatos, $puerto);

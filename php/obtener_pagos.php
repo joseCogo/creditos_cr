@@ -1,12 +1,12 @@
 <?php
-// archivo: php/obtener_pagos.php
 header('Content-Type: application/json');
 error_reporting(0);
 ini_set('display_errors', 0);
 
 session_start();
-include("conexion.php");
-include("verificar_sesion.php");
+require_once(__DIR__ . '/config_seguridad.php');
+require_once(__DIR__ . '/conexion.php');
+require_once(__DIR__ . '/verificar_sesion.php');
 
 $fecha_filtro = $_GET['fecha'] ?? '';
 
@@ -24,14 +24,25 @@ try {
             INNER JOIN clientes c ON p.cliente_id = c.id
             LEFT JOIN usuarios u ON pg.usuario_id = u.id";
 
-    // Aplicar filtro de fecha si existe
+    // Aplicar filtro de fecha usando Prepared Statement (NO más SQL Injection)
     if (!empty($fecha_filtro)) {
-        $sql .= " WHERE DATE(pg.fecha_pago) = '" . mysqli_real_escape_string($conexion, $fecha_filtro) . "'";
+        // Validar formato de fecha
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha_filtro)) {
+            throw new Exception("Formato de fecha inválido");
+        }
+        $sql .= " WHERE DATE(pg.fecha_pago) = ?";
     }
 
     $sql .= " ORDER BY pg.fecha_pago DESC, pg.id DESC";
 
-    $resultado = mysqli_query($conexion, $sql);
+    $stmt = mysqli_prepare($conexion, $sql);
+    
+    if (!empty($fecha_filtro)) {
+        mysqli_stmt_bind_param($stmt, "s", $fecha_filtro);
+    }
+    
+    mysqli_stmt_execute($stmt);
+    $resultado = mysqli_stmt_get_result($stmt);
 
     if (!$resultado) {
         throw new Exception("Error SQL: " . mysqli_error($conexion));
@@ -39,9 +50,12 @@ try {
 
     $pagos = [];
     while ($row = mysqli_fetch_assoc($resultado)) {
-        // Asegurar tipos numéricos
+        // Asegurar tipos numéricos y escapar strings
         $row['id'] = (int)$row['id'];
         $row['monto_pagado'] = (float)$row['monto_pagado'];
+        $row['cliente_nombre'] = Seguridad::escapar_html($row['cliente_nombre']);
+        $row['cobrador'] = Seguridad::escapar_html($row['cobrador']);
+        $row['metodo_pago'] = Seguridad::escapar_html($row['metodo_pago']);
         
         $pagos[] = $row;
     }
