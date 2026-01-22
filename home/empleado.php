@@ -111,11 +111,11 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                 </div>
             </div>
 
-            <!-- Pagos Section -->
+            <!-- SECCIÓN PAGOS - ACTUALIZADA -->
             <section id="pagos" class="section">
                 <div class="table-container">
                     <div class="table-header">
-                        <h3>Registro de Pagos</h3>
+                        <h3><i class="fas fa-receipt"></i> Registro de Pagos</h3>
                         <div class="search-box">
                             <input type="date" class="search-input" id="fechaPago" onchange="cargarPagos()">
                             <button class="btn btn-success" onclick="openModal('modalPago')">
@@ -128,8 +128,6 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                             <thead>
                                 <tr>
                                     <th>Cliente</th>
-                                    <th>Préstamo ID</th>
-                                    <th>Cuota Esperada</th>
                                     <th>Monto Pagado</th>
                                     <th>Método</th>
                                     <th>Fecha Pago</th>
@@ -139,7 +137,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                             </thead>
                             <tbody id="pagosTable">
                                 <tr>
-                                    <td colspan="8" style="text-align: center;">Cargando pagos...</td>
+                                    <td colspan="6" style="text-align: center;">Cargando pagos...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -147,18 +145,19 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                 </div>
             </section>
 
-            <!-- Clientes Pendientes Section -->
+            <!-- SECCIÓN CLIENTES CON DEUDA - SIMPLIFICADA -->
             <div id="clientes-pendientes" class="section">
                 <div class="table-container">
                     <div class="table-header">
-                        <h3> Cuotas Atrasadas</h3>
+                        <h3><i class="fas fa-clock"></i> Clientes con Deuda Pendiente</h3>
                         <div class="search-box">
                             <input type="text" class="search-input" id="buscarPendiente"
                                 placeholder="Buscar por nombre o cédula..."
                                 onkeyup="filtrarClientesPendientes()">
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <span style="font-weight: 600; color: #667eea;">Fecha: <span id="fecha-pendientes"></span></span>
-                                <span style="font-weight: 600; color: #ef4444;">Total Pendientes: <span id="total-pendientes">0</span></span>
+                                <span style="font-weight: 600; color: #ef4444;">
+                                    Total: <span id="total-pendientes">0</span> clientes
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -168,17 +167,15 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                                 <tr>
                                     <th>Cédula</th>
                                     <th>Cliente</th>
-                                    <th>Frecuencia</th>
-                                    <th>Valor Cuota</th>
-                                    <th>Monto en Mora</th>
-                                    <th>Cuotas Atrasadas</th>
-                                    <th>Próximo Pago</th>
+                                    <th>Saldo Pendiente</th>
+                                    <th>Días sin Pagar</th>
+                                    <th>Último Pago</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-pendientes">
                                 <tr>
-                                    <td colspan="7" style="text-align: center;">Cargando información...</td>
+                                    <td colspan="6" style="text-align: center;">Cargando información...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -186,7 +183,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                 </div>
             </div>
 
-            <!-- Modal Pago -->
+            <!-- MODAL PAGO - SIMPLIFICADO -->
             <div class="modal" id="modalPago">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -196,30 +193,28 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                         </button>
                     </div>
                     <form class="form-grid" id="formPago">
-                        <!-- Campo de búsqueda de préstamos -->
+
+                        <!-- Búsqueda de préstamos -->
                         <div class="form-group" style="grid-column: 1 / -1;">
                             <label>
-                                <i class="fas fa-search"></i> Buscar Préstamo por Cliente
+                                <i class="fas fa-search"></i> Buscar Cliente con Deuda
                             </label>
                             <input
                                 type="text"
                                 id="buscarPrestamoModal"
                                 class="search-input"
-                                placeholder="Escribe el nombre o cédula del cliente..."
+                                placeholder="Nombre o cédula del cliente..."
                                 onkeyup="filtrarPrestamosModal()"
-                                style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 5px;">
+                                style="width: 100%; padding: 10px;">
                         </div>
 
-                        <!-- Select de préstamos (ahora filtrable) -->
+                        <!-- Select de préstamos -->
                         <div class="form-group" style="grid-column: 1 / -1;">
-                            <label>Seleccionar Préstamo *</label>
+                            <label>Seleccionar Préstamo Activo *</label>
                             <select name="prestamo_id" id="prestamo_pago" required size="5"
-                                style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 5px;">
+                                style="width: 100%; padding: 8px;">
                                 <option value="">-- Seleccione un préstamo --</option>
                             </select>
-                            <small style="color: #6b7280; display: block; margin-top: 5px;">
-                                <i class="fas fa-info-circle"></i> Mostrando solo préstamos activos
-                            </small>
                         </div>
 
                         <!-- Información del préstamo seleccionado -->
@@ -233,8 +228,8 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                                     <div id="infoCliente" style="color: #374151;">-</div>
                                 </div>
                                 <div>
-                                    <strong>Cuota Diaria:</strong>
-                                    <div id="infoCuota" style="color: #10b981; font-weight: 600;">-</div>
+                                    <strong>Total Prestado:</strong>
+                                    <div id="infoMonto" style="color: #6b7280; font-weight: 600;">-</div>
                                 </div>
                                 <div>
                                     <strong>Saldo Pendiente:</strong>
@@ -246,16 +241,16 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                         <div class="form-group">
                             <label>Monto a Pagar *</label>
                             <input type="number" name="monto_pagado" id="monto_pagado" required
-                                placeholder="20000" min="0" step="0.01">
+                                placeholder="20000" min="1" step="1000">
                         </div>
 
                         <div class="form-group">
                             <label>Método de Pago *</label>
                             <select name="metodo_pago" required>
                                 <option value="efectivo">Efectivo</option>
-                                <option value="transferencia">Transferencia</option>
                                 <option value="nequi">Nequi</option>
                                 <option value="daviplata">Daviplata</option>
+                                <option value="transferencia">Transferencia</option>
                             </select>
                         </div>
 
@@ -540,44 +535,50 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
 
                         let htmlPrestamos = '';
                         if (prestamos.length > 0) {
-                            htmlPrestamos = '<h4 style="margin-top: 20px;">Préstamos Activos:</h4>';
+                            htmlPrestamos = '<h4 style="margin-top: 20px;">Préstamos:</h4>';
                             prestamos.forEach(p => {
-                                const estadoBadge = p.estado === 'activo' ? 'badge-success' : 'badge-warning';
+                                const estadoBadge = p.estado === 'activo' ? 'badge-danger' : 'badge-success';
+                                const estadoTexto = p.estado === 'activo' ? 'ACTIVO' : 'CANCELADO';
+
                                 htmlPrestamos += `
-                            <div class="card" style="margin-top: 10px;">
-                                <p><strong>Préstamo #${p.id}</strong></p>
-                                <p><strong>Monto:</strong> ${formatMoney(parseFloat(p.monto))}</p>
-                                <p><strong>Cuota Diaria:</strong> ${formatMoney(parseFloat(p.cuota_diaria))}</p>
-                                <p><strong>Saldo Pendiente:</strong> ${formatMoney(parseFloat(p.saldo_pendiente))}</p>
-                                <p><strong>Estado:</strong> <span class="badge ${estadoBadge}">${p.estado.toUpperCase()}</span></p>
-                            </div>
-                        `;
+          <div style="background: #f9fafb; padding: 15px; margin-top: 10px; border-radius: 8px; border-left: 4px solid ${p.estado === 'activo' ? '#ef4444' : '#10b981'};">
+            <p><strong>Préstamo #${p.id}</strong> 
+              <span class="badge ${estadoBadge}">${estadoTexto}</span>
+            </p>
+            <p><strong>Monto Prestado:</strong> ${formatMoney(parseFloat(p.monto))}</p>
+            <p><strong>Total con Interés:</strong> ${formatMoney(parseFloat(p.monto_total))}</p>
+            <p><strong>Saldo Pendiente:</strong> 
+              <span style="color: ${p.saldo_pendiente > 0 ? '#ef4444' : '#10b981'}; font-weight: bold; font-size: 18px;">
+                ${formatMoney(parseFloat(p.saldo_pendiente))}
+              </span>
+            </p>
+          </div>
+        `;
                             });
                         } else {
-                            htmlPrestamos = '<p style="color: #888; margin-top: 20px;">No tiene préstamos activos</p>';
+                            htmlPrestamos = '<p style="color: #888; margin-top: 20px;">No tiene préstamos registrados</p>';
                         }
 
                         Swal.fire({
                             title: 'Detalle del Cliente',
                             html: `
-                        <div style="text-align: left;">
-                            <p><strong>Nombre:</strong> ${cliente.nombre}</p>
-                            <p><strong>Cédula:</strong> ${cedula}</p>
-                            <p><strong>Teléfono:</strong> ${cliente.telefono || 'N/A'}</p>
-                            <p><strong>Dirección:</strong> ${cliente.direccion || 'N/A'}</p>
-                            <p><strong>Correo:</strong> ${cliente.correo || 'N/A'}</p>
-                            ${htmlPrestamos}
-                        </div>
-                    `,
+        <div style="text-align: left;">
+          <p><strong>Nombre:</strong> ${cliente.nombre}</p>
+          <p><strong>Cédula:</strong> ${cedula}</p>
+          <p><strong>Teléfono:</strong> ${cliente.telefono || 'N/A'}</p>
+          <p><strong>Dirección:</strong> ${cliente.direccion || 'N/A'}</p>
+          ${htmlPrestamos}
+        </div>
+      `,
                             width: '600px',
-                            confirmButtonText: 'Cerrar'
+                            confirmButtonText: 'Cerrar',
+                            confirmButtonColor: '#667eea'
                         });
                     } catch (error) {
                         console.error('Error:', error);
                         Swal.fire('Error', 'No se pudo cargar la información del cliente', 'error');
                     }
                 }
-
                 // FUNCIÓN PARA VER COMPROBANTE DE PAGO
                 async function verComprobantePago(pagoId) {
                     try {
@@ -650,7 +651,6 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
         <div style="margin-bottom: 15px; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 5px;">
           <h4 style="margin: 0 0 10px 0; color: #f59e0b;">Información del Préstamo</h4>
           <p style="margin: 5px 0;"><strong>Préstamo #:</strong> ${data.prestamo.id}</p>
-          <p style="margin: 5px 0;"><strong>Cuota Diaria:</strong> ${formatMoney(data.prestamo.cuota_diaria)}</p>
           <p style="margin: 5px 0;"><strong>Saldo Pendiente:</strong> ${formatMoney(data.prestamo.saldo_pendiente)}</p>
         </div>
 
@@ -733,11 +733,9 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                     ventanaImpresion.document.close();
                 }
 
-                // Actualizar la función cargarPagos para agregar el evento al botón
                 async function cargarPagos() {
                     try {
                         const fechaSeleccionada = document.getElementById('fechaPago').value;
-
                         let url = '/php/obtener_pagos.php';
                         if (fechaSeleccionada) {
                             url += `?fecha=${fechaSeleccionada}`;
@@ -745,33 +743,30 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
 
                         const response = await fetch(url);
                         const pagos = await response.json();
-
                         const tbody = document.getElementById('pagosTable');
 
                         if (pagos.length === 0) {
                             const mensaje = fechaSeleccionada ?
-                                `No hay pagos registrados para la fecha ${fechaSeleccionada}` :
+                                `No hay pagos registrados para ${fechaSeleccionada}` :
                                 'No hay pagos registrados';
-                            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center;">${mensaje}</td></tr>`;
+                            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">${mensaje}</td></tr>`;
                             return;
                         }
 
                         tbody.innerHTML = pagos.map(p => `
-                <tr>
-                    <td>${p.cliente_nombre}</td>
-                    <td>#${p.prestamo_id}</td>
-                    <td>${formatMoney(p.cuota_diaria)}</td>
-                    <td>${formatMoney(p.monto_pagado)}</td>
-                    <td><span class="badge badge-info">${p.metodo_pago || 'efectivo'}</span></td>
-                    <td>${p.fecha_pago}</td>
-                    <td>${p.cobrador || '-'}</td>
-                    <td>
-                    <button class="btn btn-primary btn-sm" onclick="verComprobantePago(${p.id})" title="Ver comprobante">
-                        <i class="fas fa-print"></i>
-                    </button>
-                    </td>
-                </tr>
-                `).join('');
+      <tr>
+        <td style="font-weight: 600;">${p.cliente_nombre}</td>
+        <td style="color: #10b981; font-weight: bold;">${formatMoney(p.monto_pagado)}</td>
+        <td><span class="badge badge-info">${p.metodo_pago || 'efectivo'}</span></td>
+        <td>${p.fecha_pago}</td>
+        <td>${p.cobrador || '-'}</td>
+        <td>
+          <button class="btn btn-primary btn-sm" onclick="verComprobantePago(${p.id})" title="Ver comprobante">
+            <i class="fas fa-print"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
                     } catch (error) {
                         console.error('Error cargando pagos:', error);
                     }
@@ -782,11 +777,10 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
 
                 async function cargarPrestamosSelect() {
                     try {
-                        const response = await fetch('/php/obtener_prestamos.php');
+                        const response = await fetch('/php/obtener_prestamos.php?estado=activo');
                         const prestamos = await response.json();
 
-                        // Guardar solo préstamos activos
-                        prestamosActivosData = prestamos.filter(p => p.estado === 'activo');
+                        prestamosActivosData = Array.isArray(prestamos) ? prestamos : [];
 
                         if (prestamosActivosData.length === 0) {
                             document.getElementById('prestamo_pago').innerHTML =
@@ -794,15 +788,12 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                             return;
                         }
 
-                        // Renderizar todos los préstamos inicialmente
                         renderizarPrestamosModal(prestamosActivosData);
 
-                        // Configurar evento de cambio en el select
                         document.getElementById('prestamo_pago').addEventListener('change', function() {
                             mostrarInfoPrestamo(this.value);
                         });
 
-                        // Limpiar búsqueda al abrir modal
                         document.getElementById('buscarPrestamoModal').value = '';
 
                     } catch (error) {
@@ -811,6 +802,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                             '<option value="">Error al cargar préstamos</option>';
                     }
                 }
+
 
                 function renderizarPrestamosModal(prestamos) {
                     const select = document.getElementById('prestamo_pago');
@@ -822,15 +814,15 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
 
                     select.innerHTML = '<option value="">-- Seleccione un préstamo --</option>' +
                         prestamos.map(p => {
-                            const cuota = parseFloat(p.cuota_diaria);
                             const saldo = parseFloat(p.saldo_pendiente);
+                            const monto = parseFloat(p.monto);
                             return `<option value="${p.id}" 
-                        data-cuota="${cuota}" 
-                        data-saldo="${saldo}"
-                        data-cliente="${p.cliente_nombre}"
-                        data-cedula="${p.cliente_cedula}">
-                    ${p.cliente_nombre} (${p.cliente_cedula}) - Préstamo #${p.id} - Cuota: ${formatMoney(cuota)}
-                </option>`;
+                            data-saldo="${saldo}"
+                            data-monto="${monto}"
+                            data-cliente="${p.cliente_nombre}"
+                            data-cedula="${p.cliente_cedula}">
+                        ${p.cliente_nombre} (${p.cliente_cedula}) - Debe: ${formatMoney(saldo)}
+                    </option>`;
                         }).join('');
                 }
 
@@ -838,12 +830,10 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                     const busqueda = document.getElementById('buscarPrestamoModal').value.toLowerCase();
 
                     if (!busqueda.trim()) {
-                        // Si no hay búsqueda, mostrar todos
                         renderizarPrestamosModal(prestamosActivosData);
                         return;
                     }
 
-                    // Filtrar préstamos
                     const prestamosFiltrados = prestamosActivosData.filter(p =>
                         p.cliente_nombre.toLowerCase().includes(busqueda) ||
                         p.cliente_cedula.toLowerCase().includes(busqueda) ||
@@ -852,10 +842,9 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
 
                     renderizarPrestamosModal(prestamosFiltrados);
 
-                    // Si solo hay un resultado, seleccionarlo automáticamente
                     if (prestamosFiltrados.length === 1) {
                         const select = document.getElementById('prestamo_pago');
-                        select.selectedIndex = 1; // Seleccionar el primer préstamo (después de la opción vacía)
+                        select.selectedIndex = 1;
                         mostrarInfoPrestamo(prestamosFiltrados[0].id);
                     }
                 }
@@ -871,21 +860,19 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                         return;
                     }
 
-                    // Obtener datos del option seleccionado
-                    const cuota = selectedOption.getAttribute('data-cuota');
                     const saldo = selectedOption.getAttribute('data-saldo');
+                    const monto = selectedOption.getAttribute('data-monto');
                     const cliente = selectedOption.getAttribute('data-cliente');
                     const cedula = selectedOption.getAttribute('data-cedula');
 
-                    // Mostrar información
                     document.getElementById('infoCliente').textContent = `${cliente} (${cedula})`;
-                    document.getElementById('infoCuota').textContent = formatMoney(parseFloat(cuota));
+                    document.getElementById('infoMonto').textContent = formatMoney(parseFloat(monto));
                     document.getElementById('infoSaldo').textContent = formatMoney(parseFloat(saldo));
 
-                    // Auto-llenar monto con la cuota diaria
-                    document.getElementById('monto_pagado').value = cuota;
+                    // No auto-llenar monto, dejar que empleado decida cuánto cobrar
+                    document.getElementById('monto_pagado').value = '';
+                    document.getElementById('monto_pagado').focus();
 
-                    // Mostrar el div de información
                     infoDiv.style.display = 'block';
                 }
 
@@ -975,21 +962,20 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                         const response = await fetch('/php/obtener_clientes_pendientes.php');
                         const data = await response.json();
 
-                        // Guardar datos globalmente
-                        clientesPendientesData = data.clientes || [];
-
-                        // Actualizar información de fecha
-                        if (data.fecha_consulta) {
-                            document.getElementById('fecha-pendientes').textContent = data.fecha_consulta;
+                        if (!data.success) {
+                            console.error('Error:', data.message);
+                            return;
                         }
 
+                        clientesPendientesData = data.clientes || [];
                         renderizarClientesPendientes();
                     } catch (error) {
                         console.error('Error:', error);
                         document.getElementById('tabla-pendientes').innerHTML =
-                            '<tr><td colspan="7" style="text-align: center; color: red;">Error al cargar pendientes</td></tr>';
+                            '<tr><td colspan="6" style="text-align: center; color: red;">Error al cargar datos</td></tr>';
                     }
                 }
+
 
                 function renderizarClientesPendientes() {
                     const tbody = document.getElementById('tabla-pendientes');
@@ -1003,56 +989,48 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
                     document.getElementById('total-pendientes').textContent = clientesFiltrados.length;
 
                     if (clientesFiltrados.length === 0) {
-                        const mensaje = busqueda ? 'No se encontraron clientes' : '✓ ¡Excelente! No hay clientes con cuotas atrasadas';
-                        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #10b981; font-weight: 600; padding: 20px;">${mensaje}</td></tr>`;
+                        const mensaje = busqueda ?
+                            'No se encontraron clientes' :
+                            '✓ ¡Excelente! No hay clientes con deuda pendiente';
+                        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #10b981; font-weight: 600; padding: 20px;">${mensaje}</td></tr>`;
                         return;
                     }
 
                     tbody.innerHTML = clientesFiltrados.map(cliente => {
-                        const cuotasAtrasadas = parseInt(cliente.cuotas_atrasadas);
-                        const periodicidad = cliente.periodicidad || 'Diario';
-                        const valorCuota = parseFloat(cliente.valor_cuota);
-                        const montoEnMora = parseFloat(cliente.falta_pagar);
+                        const diasSinPagar = parseInt(cliente.dias_sin_pagar || 0);
+                        const saldoTotal = parseFloat(cliente.saldo_total);
 
-                        // Lógica de Fecha
-                        let fechaHtml = '-';
-                        if (cliente.proximo_pago) {
-                            const fechaObj = new Date(cliente.proximo_pago + 'T00:00:00');
-                            const hoy = new Date();
-                            hoy.setHours(0, 0, 0, 0);
-                            const colorFecha = fechaObj < hoy ? '#ef4444' : '#10b981';
-                            const fechaTexto = fechaObj.toLocaleDateString('es-CO', {
-                                day: 'numeric',
-                                month: 'short'
-                            });
-                            fechaHtml = `<span style="font-weight:700; color:${colorFecha};">${fechaTexto}</span>`;
+                        // Determinar color según días sin pagar
+                        let rowStyle = '';
+                        let badgeClass = 'badge-warning';
+
+                        if (diasSinPagar >= 7) {
+                            rowStyle = 'background-color: #fee2e2;';
+                            badgeClass = 'badge-danger';
+                        } else if (diasSinPagar >= 3) {
+                            rowStyle = 'background-color: #fef3c7;';
                         }
 
-                        let badgeClass = cuotasAtrasadas >= 3 ? 'badge-danger' : 'badge-warning';
-                        let rowStyle = cuotasAtrasadas >= 3 ? 'background-color: #fee2e2;' : 'background-color: #fef3c7;';
-
-                        let badgePeriodo = '';
-                        if (periodicidad === 'Semanal') badgePeriodo = '<span class="badge badge-info">Semanal</span>';
-                        else if (periodicidad === 'Quincenal') badgePeriodo = '<span class="badge badge-success">Quincenal</span>';
-                        else badgePeriodo = '<span class="badge" style="background:#6b7280; color:white;">Diario</span>';
-
                         return `
-            <tr style="${rowStyle}">
-                <td>${cliente.cedula}</td>
-                <td style="font-weight: 600;">${cliente.cliente_nombre}</td>
-                <td>${badgePeriodo}</td>
-                <td>${formatMoney(valorCuota)}</td>
-                <td style="color: #ef4444; font-weight: 700;">${formatMoney(montoEnMora)}</td>
-                <td style="text-align: center;"><span class="badge ${badgeClass}">${cuotasAtrasadas}</span></td>
-                <td style="text-align: center;">${fechaHtml}</td>
-                <td>
-                    <button class="btn btn-sm btn-success" 
-                            onclick="cobrarCliente(${cliente.prestamo_id}, ${montoEnMora})">
-                        <i class="fas fa-hand-holding-usd"></i> Cobrar
-                    </button>
-                </td>
-            </tr>
-        `;
+                    <tr style="${rowStyle}">
+                        <td>${cliente.cedula}</td>
+                        <td style="font-weight: 600;">${cliente.cliente_nombre}</td>
+                        <td style="color: #ef4444; font-weight: 700; font-size: 16px;">
+                        ${formatMoney(saldoTotal)}
+                        </td>
+                        <td style="text-align: center;">
+                        <span class="badge ${badgeClass}">${diasSinPagar} días</span>
+                        </td>
+                        <td>${cliente.ultimo_pago || '-'}</td>
+                        <td>
+                        <button class="btn btn-sm btn-success" 
+                                onclick="cobrarCliente(${cliente.prestamo_id}, ${saldoTotal})"
+                                title="Registrar pago">
+                            <i class="fas fa-hand-holding-usd"></i> Cobrar
+                        </button>
+                        </td>
+                    </tr>
+                    `;
                     }).join('');
                 }
 
@@ -1062,30 +1040,22 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Empleado';
 
                 // Función modificada para aceptar el monto sugerido (mora total)
                 function cobrarCliente(prestamoId, montoSugerido = null) {
-                    // 1. Ir a la sección de pagos
                     showSection('pagos');
 
-                    // 2. Esperar un poco y abrir el modal
                     setTimeout(() => {
                         openModal('modalPago');
 
-                        // 3. Seleccionar el préstamo en el dropdown
                         setTimeout(() => {
                             const select = document.getElementById('prestamo_pago');
                             select.value = prestamoId;
 
-                            // Disparamos el evento 'change' para que el sistema cargue la info del préstamo
-                            // (Nombre, saldo total, etc.)
                             const event = new Event('change');
                             select.dispatchEvent(event);
 
-                            // 4. SOBREESCRIBIR el monto a pagar
-                            // El evento 'change' pone la cuota normal por defecto. 
-                            // Nosotros queremos poner el total de la mora (montoSugerido).
                             if (montoSugerido) {
                                 setTimeout(() => {
                                     document.getElementById('monto_pagado').value = montoSugerido;
-                                }, 200); // Pequeño delay para asegurar que sobreescriba al default
+                                }, 200);
                             }
                         }, 300);
                     }, 100);
